@@ -8,15 +8,49 @@ export default function ComingSoon() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
 
-    // Placeholder for Mailchimp integration
-    // Replace with actual Mailchimp API call
-    setTimeout(() => {
-      toast.success('Thank you for signing up! We\'ll keep you updated.');
-      setEmail('');
+    try {
+      const response = await fetch('/.netlify/functions/mailchimp-subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to subscribe');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(data.message);
+        setEmail('');
+      } else {
+        throw new Error(data.error || 'Failed to subscribe');
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to subscribe. Please try again.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -52,11 +86,12 @@ export default function ComingSoon() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 className="w-full px-6 py-3 rounded-full bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                disabled={loading}
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-600 rounded-full p-2 hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-600 rounded-full p-2 hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
