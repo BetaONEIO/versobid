@@ -1,15 +1,22 @@
-const mailchimp = require('@mailchimp/mailchimp_marketing');
+// ESM syntax
+import mailchimp from '@mailchimp/mailchimp_marketing';
 
 // Configure Mailchimp with the correct server prefix format
 const serverPrefix = process.env.MAILCHIMP_SERVER_PREFIX.replace(/-us\d+$/, '');
 
 mailchimp.setConfig({
   apiKey: process.env.MAILCHIMP_API_KEY,
-  server: serverPrefix, // Use only the server prefix without the region
+  server: serverPrefix,
 });
 
-const handler = async (event) => {
-  // Set CORS headers
+export const handler = async (event) => {
+  console.log('Received request:', {
+    method: event.httpMethod,
+    path: event.path,
+    headers: event.headers,
+    timestamp: new Date().toISOString(),
+  });
+
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -17,8 +24,8 @@ const handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return {
       statusCode: 204,
       headers,
@@ -27,6 +34,7 @@ const handler = async (event) => {
   }
 
   if (event.httpMethod !== 'POST') {
+    console.warn('Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
@@ -35,17 +43,18 @@ const handler = async (event) => {
   }
 
   try {
-    // Log environment variables for debugging (will be visible in Netlify Functions log)
-    console.log('Server Prefix:', process.env.MAILCHIMP_SERVER_PREFIX);
-    console.log('List ID:', process.env.MAILCHIMP_LIST_ID);
+    console.log('Processing subscription request...');
 
-    // Validate request body
     if (!event.body) {
+      console.error('Missing request body');
       throw new Error('Missing request body');
     }
 
     const { email } = JSON.parse(event.body);
+    console.log('Parsed email:', email);
+
     if (!email) {
+      console.error('Email is required but was not provided');
       return {
         statusCode: 400,
         headers,
@@ -53,10 +62,22 @@ const handler = async (event) => {
       };
     }
 
-    // Add member to list
+    console.log('Mailchimp config:', {
+      server: serverPrefix,
+      listId: process.env.MAILCHIMP_LIST_ID,
+      timestamp: new Date().toISOString(),
+    });
+
     const response = await mailchimp.lists.addListMember(process.env.MAILCHIMP_LIST_ID, {
       email_address: email,
       status: 'subscribed',
+    });
+
+    console.log('Mailchimp subscription successful:', {
+      contactId: response.id,
+      email: response.email_address,
+      status: response.status,
+      timestamp: new Date().toISOString(),
     });
 
     return {
@@ -69,10 +90,19 @@ const handler = async (event) => {
       }),
     };
   } catch (error) {
-    console.error('Mailchimp error:', error);
+    console.error('Mailchimp subscription error:', {
+      error: error.message,
+      response: error.response?.body,
+      timestamp: new Date().toISOString(),
+      stack: error.stack,
+    });
 
-    // Handle member already subscribed
-    if (error.response && error.response.body && error.response.body.title === 'Member Exists') {
+    if (error.response?.body?.title === 'Member Exists') {
+      console.log('Handling existing member:', {
+        error: error.response.body,
+        timestamp: new Date().toISOString(),
+      });
+
       return {
         statusCode: 200,
         headers,
@@ -83,15 +113,13 @@ const handler = async (event) => {
       };
     }
 
-    // Handle other errors
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         error: error.message || 'An unexpected error occurred. Please try again.',
+        timestamp: new Date().toISOString(),
       }),
     };
   }
 };
-
-module.exports = { handler };
