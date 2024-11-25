@@ -11,26 +11,19 @@ export default function ComingSoon() {
     
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      console.log('Submission attempted with empty email');
       toast.error('Please enter your email address');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
-      console.log('Invalid email format:', trimmedEmail);
       toast.error('Please enter a valid email address');
       return;
     }
 
     setLoading(true);
-    console.log('Initiating subscription request:', {
-      email: trimmedEmail,
-      timestamp: new Date().toISOString(),
-    });
 
     try {
-      console.log('Sending request to Mailchimp function...');
       const response = await fetch('/.netlify/functions/mailchimp-subscribe', {
         method: 'POST',
         headers: {
@@ -39,28 +32,7 @@ export default function ComingSoon() {
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      console.log('Received response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Subscription failed:', {
-          status: response.status,
-          error: errorData,
-          timestamp: new Date().toISOString(),
-        });
-        throw new Error(errorData.error || 'Failed to subscribe');
-      }
-
       const data = await response.json();
-      console.log('Subscription response:', {
-        success: data.success,
-        message: data.message,
-        timestamp: new Date().toISOString(),
-      });
       
       if (data.success) {
         toast.success(data.message);
@@ -69,19 +41,12 @@ export default function ComingSoon() {
         throw new Error(data.error || 'Failed to subscribe');
       }
     } catch (error) {
-      console.error('Subscription error:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString(),
-      });
       toast.error(error instanceof Error ? error.message : 'Failed to subscribe. Please try again.');
     } finally {
       setLoading(false);
-      console.log('Subscription request completed');
     }
   };
 
-  // Rest of the component remains the same...
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white/10 backdrop-blur-lg rounded-2xl p-8 md:p-12 shadow-2xl">
