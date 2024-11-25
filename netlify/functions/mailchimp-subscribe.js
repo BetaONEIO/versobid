@@ -31,6 +31,7 @@ export const handler = async (event) => {
     const { email } = JSON.parse(event.body);
 
     if (!email) {
+      console.log('Email is required');
       return {
         statusCode: 400,
         headers,
@@ -38,18 +39,21 @@ export const handler = async (event) => {
       };
     }
 
+    console.log('Configuring Mailchimp...');
     // Configure Mailchimp
     mailchimp.setConfig({
       apiKey: process.env.MAILCHIMP_API_KEY,
       server: process.env.MAILCHIMP_SERVER_PREFIX
     });
 
+    console.log('Adding member to list...');
     // Add subscriber to list
     const response = await mailchimp.lists.addListMember(process.env.MAILCHIMP_LIST_ID, {
       email_address: email,
       status: 'subscribed'
     });
 
+    console.log('Successfully added member:', response.id);
     return {
       statusCode: 200,
       headers,
@@ -78,7 +82,8 @@ export const handler = async (event) => {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: 'Failed to subscribe. Please try again later.'
+        error: 'Failed to subscribe. Please try again later.',
+        details: error.message
       })
     };
   }
