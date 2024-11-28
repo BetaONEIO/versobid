@@ -19,7 +19,11 @@ import { useAuthStore } from './stores/authStore';
 // Check if we're on the main domain or test subdomain
 const isMainDomain = window.location.hostname === 'versobid.com';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, initialized } = useAuthStore();
   
   if (!initialized) return null;
