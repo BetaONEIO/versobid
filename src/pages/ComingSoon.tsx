@@ -24,7 +24,7 @@ export default function ComingSoon() {
     setLoading(true);
 
     try {
-      const response = await fetch('/.netlify/functions/mailchimp-subscribe', {
+      const response = await fetch('/.netlify/functions/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,6 +41,7 @@ export default function ComingSoon() {
         throw new Error(data.error || 'Failed to subscribe');
       }
     } catch (error) {
+      console.error('Subscription error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to subscribe. Please try again.');
     } finally {
       setLoading(false);
