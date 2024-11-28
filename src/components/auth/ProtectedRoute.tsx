@@ -8,14 +8,15 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, role }: ProtectedRouteProps) {
-  const user = useAuthStore((state) => state.user);
-  const userRole = useAuthStore((state) => state.user?.user_metadata.role);
-
+  const { user, initialized } = useAuthStore();
+  
+  if (!initialized) return null;
+  
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/auth" />;
   }
 
-  if (role && userRole !== role) {
+  if (role && user.user_metadata?.role !== role) {
     return <Navigate to="/" />;
   }
 

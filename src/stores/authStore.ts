@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         set({ 
           session, 
-          user: session.user as User,
+          user: session.user as unknown as User,
           profile,
           initialized: true,
           loading: false 
@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
           set({ 
             session, 
-            user: session.user as User,
+            user: session.user as unknown as User,
             profile 
           });
         } else if (event === 'SIGNED_OUT') {
@@ -97,7 +97,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (profileError) throw profileError;
 
       set({ 
-        user: data.user as User, 
+        user: data.user as unknown as User,
         session: data.session,
         profile 
       });
@@ -118,10 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email,
         password,
         options: {
-          data: {
-            ...metadata,
-            created_at: new Date().toISOString(),
-          }
+          data: metadata
         }
       });
       
@@ -152,13 +149,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
 
         set({ 
-          user: data.user as User, 
+          user: data.user as unknown as User,
           session: data.session,
           profile 
         });
       }
 
-      toast.success('Account created successfully! Please verify your email.');
+      toast.success('Account created successfully!');
     } catch (error: any) {
       toast.error(error.message);
       throw error;
@@ -182,10 +179,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateProfile: async (data) => {
-    try {
-      const { user } = get();
-      if (!user) throw new Error('No user logged in');
+    const { user } = get();
+    if (!user) throw new Error('No user logged in');
 
+    try {
       const { error } = await supabase
         .from('profiles')
         .update({

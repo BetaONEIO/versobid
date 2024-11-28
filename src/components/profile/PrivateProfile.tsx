@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Package, DollarSign, User, Building, MapPin, Star, History } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
+import { useProfile } from '../../lib/hooks/useProfile';
 import ProfileForm from './ProfileForm';
 import ActivityFeed from './ActivityFeed';
 import ListedItems from './ListedItems';
@@ -9,24 +10,25 @@ import Reviews from './Reviews';
 
 export default function PrivateProfile() {
   const { user } = useAuthStore();
+  const { profile } = useProfile(user?.id);
   const [activeTab, setActiveTab] = useState('profile');
 
   const stats = [
     {
       label: 'Items Posted',
-      value: user?.profile?.items_count || 0,
+      value: profile?.items_count || 0,
       icon: Package,
       color: 'text-indigo-600 dark:text-indigo-400',
     },
     {
       label: 'Successful Deals',
-      value: user?.profile?.successful_deals || 0,
+      value: profile?.successful_deals || 0,
       icon: DollarSign,
       color: 'text-green-600 dark:text-green-400',
     },
     {
       label: 'Rating',
-      value: `${user?.profile?.rating || '5.0'} ★`,
+      value: `${profile?.rating || '5.0'} ★`,
       icon: Star,
       color: 'text-yellow-600 dark:text-yellow-400',
     },
@@ -39,6 +41,8 @@ export default function PrivateProfile() {
     { id: 'reviews', label: 'Reviews', icon: Star },
   ];
 
+  if (!profile) return null;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
@@ -47,10 +51,10 @@ export default function PrivateProfile() {
           <div className="flex items-center space-x-4">
             <div className="relative group">
               <div className="h-20 w-20 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center overflow-hidden">
-                {user?.profile?.avatar_url ? (
+                {profile.avatar_url ? (
                   <img
-                    src={user.profile.avatar_url}
-                    alt={user.profile.name}
+                    src={profile.avatar_url}
+                    alt={profile.name}
                     className="h-20 w-20 object-cover"
                   />
                 ) : (
@@ -63,25 +67,25 @@ export default function PrivateProfile() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {user?.profile?.name}
+                {profile.name}
               </h1>
               <div className="mt-1 flex items-center space-x-4 text-gray-500 dark:text-gray-400">
-                {user?.profile?.company && (
+                {profile.company && (
                   <div className="flex items-center">
                     <Building className="h-4 w-4 mr-1" />
-                    <span>{user.profile.company}</span>
+                    <span>{profile.company}</span>
                   </div>
                 )}
-                {user?.profile?.location && (
+                {profile.location && (
                   <div className="flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
-                    <span>{user.profile.location}</span>
+                    <span>{profile.location}</span>
                   </div>
                 )}
               </div>
-              {user?.profile?.bio && (
+              {profile.bio && (
                 <p className="mt-2 text-gray-600 dark:text-gray-300">
-                  {user.profile.bio}
+                  {profile.bio}
                 </p>
               )}
             </div>

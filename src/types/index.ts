@@ -1,49 +1,50 @@
 import { Database } from './database';
+import { 
+  SupabaseUser,
+  SupabaseProfile,
+  SupabaseItem,
+  SupabaseBid,
+  SupabaseChat,
+  SupabaseMessage,
+  SupabaseReview
+} from './supabase';
 
-// Utility types to extract row types from Database
-type Tables = Database['public']['Tables'];
-type Row<T extends keyof Tables> = Tables[T]['Row'];
+// Re-export Supabase types
+export type {
+  SupabaseUser as User,
+  SupabaseProfile as Profile,
+  SupabaseItem as Item,
+  SupabaseBid as Bid,
+  SupabaseChat as Chat,
+  SupabaseMessage as Message,
+  SupabaseReview as Review
+};
 
-// Base types from database schema
-export type DBUser = Row<'profiles'>;
-export type DBItem = Row<'items'>;
-export type DBBid = Row<'bids'>;
-export type DBChat = Row<'chats'>;
-export type DBMessage = Row<'messages'>;
-export type DBReview = Row<'reviews'>;
+// Database types
+export type Tables = Database['public']['Tables'];
+export type DBUser = Tables['profiles']['Row'];
+export type DBItem = Tables['items']['Row'];
+export type DBBid = Tables['bids']['Row'];
+export type DBChat = Tables['chats']['Row'];
+export type DBMessage = Tables['messages']['Row'];
+export type DBReview = Tables['reviews']['Row'];
 
-// Enhanced types with relationships
-export interface User extends DBUser {
-  role?: 'buyer' | 'seller' | 'admin';
-}
+// Constants
+export const ItemStatus = {
+  OPEN: 'open',
+  CLOSED: 'closed',
+} as const;
 
-export interface Item extends DBItem {
-  buyer?: User;
-  bids?: Bid[];
-}
+export const BidStatus = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+} as const;
 
-export interface Bid extends DBBid {
-  seller?: User;
-  item?: Item;
-}
+export type ItemStatus = typeof ItemStatus[keyof typeof ItemStatus];
+export type BidStatus = typeof BidStatus[keyof typeof BidStatus];
 
-export interface Chat extends DBChat {
-  participant?: User;
-  messages?: Message[];
-  unread_count?: number;
-}
-
-export interface Message extends DBMessage {
-  sender?: User;
-  recipient?: User;
-}
-
-export interface Review extends DBReview {
-  reviewer?: User;
-  reviewee?: User;
-}
-
-// Form data types
+// Form Types
 export interface ItemFormData {
   title: string;
   description: string;
@@ -68,18 +69,3 @@ export interface ProfileFormData {
   location?: string;
   website?: string;
 }
-
-// Constants
-export const ItemStatus = {
-  OPEN: 'open',
-  CLOSED: 'closed',
-} as const;
-
-export const BidStatus = {
-  PENDING: 'pending',
-  ACCEPTED: 'accepted',
-  REJECTED: 'rejected',
-} as const;
-
-export type ItemStatus = typeof ItemStatus[keyof typeof ItemStatus];
-export type BidStatus = typeof BidStatus[keyof typeof BidStatus];
