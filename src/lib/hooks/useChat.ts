@@ -1,3 +1,4 @@
+```typescript
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Message } from '../../types';
@@ -115,3 +116,4 @@ export function useChat(chatId: string) {
     markMessagesAsRead,
   };
 }
+```

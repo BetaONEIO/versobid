@@ -1,3 +1,4 @@
+```typescript
 import { formatDistanceToNow, format } from 'date-fns';
 
 export const formatTimestamp = (date: string | Date | null): string => {
@@ -43,3 +44,4 @@ export const slugify = (text: string): string => {
     .replace(/[^\w ]+/g, '')
     .replace(/ +/g, '-');
 };
+```

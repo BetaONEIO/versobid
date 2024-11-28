@@ -1,3 +1,4 @@
+```typescript
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Profile } from '../../types';
@@ -11,7 +12,7 @@ export function useProfile(userId?: string) {
 
   useEffect(() => {
     if (userId || user?.id) {
-      fetchProfile(userId || user.id);
+      fetchProfile(userId || user?.id);
     }
   }, [userId, user]);
 
@@ -63,3 +64,4 @@ export function useProfile(userId?: string) {
     refreshProfile: () => user?.id && fetchProfile(user.id),
   };
 }
+```

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, User } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Chat } from '../../types';
 import { formatTimestamp } from '../../lib/utils';
@@ -15,6 +16,7 @@ export default function ChatList() {
   useEffect(() => {
     if (user) {
       fetchChats();
+      subscribeToChats();
     }
   }, [user]);
 
@@ -39,6 +41,30 @@ export default function ChatList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const subscribeToChats = () => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('chats')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        () => {
+          fetchChats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   if (loading) {

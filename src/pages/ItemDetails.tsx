@@ -1,3 +1,4 @@
+```typescript
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, DollarSign, MapPin, Tag, AlertCircle } from 'lucide-react';
@@ -30,11 +31,8 @@ export default function ItemDetails() {
         .from('items')
         .select(`
           *,
-          bids (
-            *,
-            seller:profiles(*)
-          ),
-          buyer:profiles(*)
+          buyer:profiles(*),
+          bids(*)
         `)
         .eq('id', id)
         .single();
@@ -44,6 +42,7 @@ export default function ItemDetails() {
     } catch (error) {
       console.error('Error fetching item:', error);
       toast.error('Failed to load item details');
+      navigate('/');
     } finally {
       setLoading(false);
     }
@@ -145,3 +144,4 @@ export default function ItemDetails() {
     </div>
   );
 }
+```

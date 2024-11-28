@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
@@ -20,11 +20,13 @@ export default function ListedItems() {
   }, [user]);
 
   const fetchItems = async () => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from('items')
         .select('*')
-        .eq('buyer_id', user?.id)
+        .eq('buyer_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

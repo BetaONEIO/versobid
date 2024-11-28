@@ -1,13 +1,10 @@
-// Extending the base types with Supabase-specific fields
-import { Database } from './database';
+```typescript
+export type { Database } from './database';
+export * from './supabase';
 
-export type DbUser = Database['public']['Tables']['users']['Row'];
-export type DbProfile = Database['public']['Tables']['profiles']['Row'];
-export type DbItem = Database['public']['Tables']['items']['Row'];
-export type DbBid = Database['public']['Tables']['bids']['Row'];
-export type DbChat = Database['public']['Tables']['chats']['Row'];
-export type DbMessage = Database['public']['Tables']['messages']['Row'];
-export type DbReview = Database['public']['Tables']['reviews']['Row'];
+export type UserRole = 'buyer' | 'seller' | 'admin';
+export type ItemStatus = 'open' | 'closed';
+export type BidStatus = 'pending' | 'accepted' | 'rejected';
 
 export interface User {
   id: string;
@@ -58,22 +55,22 @@ export interface Item {
   image_url: string | null;
   status: ItemStatus;
   buyer_id: string;
-  created_at: string;
-  updated_at: string;
   buyer?: Profile;
   bids?: Bid[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Bid {
   id: string;
   item_id: string;
   seller_id: string;
+  seller?: Profile;
   amount: number;
   notes: string | null;
   status: BidStatus;
   created_at: string;
   updated_at: string;
-  seller?: Profile;
   item?: Item;
 }
 
@@ -104,12 +101,9 @@ export interface Review {
   id: string;
   user_id: string;
   reviewer_id: string;
+  reviewer?: Profile;
   rating: number;
   comment: string;
   created_at: string;
-  reviewer?: Profile;
 }
-
-export type ItemStatus = 'open' | 'closed';
-export type BidStatus = 'pending' | 'accepted' | 'rejected';
-export type UserRole = 'buyer' | 'seller' | 'admin';
+```
