@@ -1,55 +1,50 @@
-export interface User {
-  id: string;
-  email: string;
-  profile?: Profile;
-  user_metadata?: {
-    role: 'buyer' | 'seller' | 'admin';
-    name: string;
-  };
+import { Database } from './database';
+
+// Utility types to extract row types from Database
+type Tables = Database['public']['Tables'];
+type Row<T extends keyof Tables> = Tables[T]['Row'];
+
+// Base types from database schema
+export type DBUser = Row<'profiles'>;
+export type DBItem = Row<'items'>;
+export type DBBid = Row<'bids'>;
+export type DBChat = Row<'chats'>;
+export type DBMessage = Row<'messages'>;
+export type DBReview = Row<'reviews'>;
+
+// Enhanced types with relationships
+export interface User extends DBUser {
+  role?: 'buyer' | 'seller' | 'admin';
 }
 
-export interface Profile {
-  id: string;
-  name: string;
-  avatar_url?: string;
-  email: string;
-  username: string;
-  bio?: string;
-  company?: string;
-  location?: string;
-  website?: string;
-  rating: number;
-  successful_deals: number;
-  items_count: number;
-  created_at: string;
-  updated_at: string;
+export interface Item extends DBItem {
+  buyer?: User;
+  bids?: Bid[];
 }
 
-export interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  recipient_id: string;
-  chat_id: string;
-  created_at: string;
-  read: boolean;
-  image_url?: string;
+export interface Bid extends DBBid {
+  seller?: User;
+  item?: Item;
 }
 
-export interface Chat {
-  id: string;
-  participant1_id: string;
-  participant2_id: string;
-  item_id?: string;
-  last_message?: string;
-  last_message_at?: string;
-  created_at: string;
-  participant?: Profile;
-  unread_count: number;
+export interface Chat extends DBChat {
+  participant?: User;
+  messages?: Message[];
+  unread_count?: number;
 }
 
-export interface Item {
-  id: string;
+export interface Message extends DBMessage {
+  sender?: User;
+  recipient?: User;
+}
+
+export interface Review extends DBReview {
+  reviewer?: User;
+  reviewee?: User;
+}
+
+// Form data types
+export interface ItemFormData {
   title: string;
   description: string;
   category: string;
@@ -58,33 +53,33 @@ export interface Item {
   condition: string;
   location: string;
   image_url?: string;
-  status: 'open' | 'closed';
-  buyer_id: string;
-  created_at: string;
-  updated_at: string;
-  buyer?: Profile;
-  bids?: Bid[];
 }
 
-export interface Bid {
-  id: string;
-  item_id: string;
-  seller_id: string;
+export interface BidFormData {
   amount: number;
   notes?: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  seller?: Profile;
-  item?: Item;
 }
 
-export interface Review {
-  id: string;
-  user_id: string;
-  reviewer_id: string;
-  rating: number;
-  comment: string;
-  created_at: string;
-  reviewer?: Profile;
+export interface ProfileFormData {
+  name: string;
+  username: string;
+  bio?: string;
+  company?: string;
+  location?: string;
+  website?: string;
 }
+
+// Constants
+export const ItemStatus = {
+  OPEN: 'open',
+  CLOSED: 'closed',
+} as const;
+
+export const BidStatus = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+} as const;
+
+export type ItemStatus = typeof ItemStatus[keyof typeof ItemStatus];
+export type BidStatus = typeof BidStatus[keyof typeof BidStatus];

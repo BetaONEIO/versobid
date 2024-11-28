@@ -3,21 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, DollarSign, MapPin, Tag, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUserContext } from '../context/UserContext';
+import { Item } from '../types';
 import PlaceBidModal from '../components/items/PlaceBidModal';
 import BidHistory from '../components/items/BidHistory';
 import ItemImageGallery from '../components/items/ItemImageGallery';
+import { formatCurrency, formatTimestamp } from '../lib/utils';
 import toast from 'react-hot-toast';
 
 export default function ItemDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userRole } = useUserContext();
-  const [item, setItem] = useState(null);
+  const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBidModal, setShowBidModal] = useState(false);
 
   useEffect(() => {
-    fetchItem();
+    if (id) {
+      fetchItem();
+    }
   }, [id]);
 
   const fetchItem = async () => {
@@ -76,12 +80,10 @@ export default function ItemDetails() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left column - Images */}
         <div>
-          <ItemImageGallery images={item.images || [item.image_url]} />
+          <ItemImageGallery images={[item.image_url || '']} />
         </div>
 
-        {/* Right column - Details */}
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{item.title}</h1>
@@ -90,7 +92,7 @@ export default function ItemDetails() {
                 {item.category}
               </span>
               <span className="text-gray-500 dark:text-gray-400">
-                Posted by {item.buyer.name}
+                Posted by {item.buyer?.name}
               </span>
             </div>
           </div>
@@ -102,11 +104,11 @@ export default function ItemDetails() {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
               <DollarSign className="h-5 w-5" />
-              <span>Target Price: ${item.target_price}</span>
+              <span>Target Price: {formatCurrency(item.target_price)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
               <Clock className="h-5 w-5" />
-              <span>Deadline: {new Date(item.deadline).toLocaleDateString()}</span>
+              <span>Deadline: {formatTimestamp(item.deadline)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
               <Tag className="h-5 w-5" />
@@ -129,7 +131,7 @@ export default function ItemDetails() {
             </div>
           )}
 
-          <BidHistory bids={item.bids} />
+          <BidHistory bids={item.bids || []} />
         </div>
       </div>
 

@@ -1,17 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Star } from 'lucide-react';
+import { Review } from '../../types';
+import { formatTimestamp } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 export default function Reviews() {
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
 
   useEffect(() => {
-    fetchReviews();
-  }, []);
+    if (user) {
+      fetchReviews();
+    }
+  }, [user]);
 
   const fetchReviews = async () => {
     try {
@@ -19,7 +23,7 @@ export default function Reviews() {
         .from('reviews')
         .select(`
           *,
-          reviewer:profiles!reviewer_id(*)
+          reviewer:profiles(*)
         `)
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
@@ -58,7 +62,7 @@ export default function Reviews() {
           className="bg-white dark:bg-gray-700 rounded-lg shadow overflow-hidden p-4"
         >
           <div className="flex items-start space-x-4">
-            {review.reviewer.avatar_url ? (
+            {review.reviewer?.avatar_url ? (
               <img
                 src={review.reviewer.avatar_url}
                 alt={review.reviewer.name}
@@ -67,14 +71,14 @@ export default function Reviews() {
             ) : (
               <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                 <span className="text-lg font-medium text-gray-600 dark:text-gray-300">
-                  {review.reviewer.name.charAt(0)}
+                  {review.reviewer?.name.charAt(0)}
                 </span>
               </div>
             )}
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  {review.reviewer.name}
+                  {review.reviewer?.name}
                 </h3>
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
@@ -91,7 +95,7 @@ export default function Reviews() {
               </div>
               <p className="mt-1 text-gray-600 dark:text-gray-300">{review.comment}</p>
               <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {new Date(review.created_at).toLocaleDateString()}
+                {formatTimestamp(review.created_at)}
               </div>
             </div>
           </div>

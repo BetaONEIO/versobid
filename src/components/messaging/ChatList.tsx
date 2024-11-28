@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, User } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { formatDistanceToNow } from 'date-fns';
 import { Chat } from '../../types';
+import { formatTimestamp } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 export default function ChatList() {
@@ -14,52 +13,33 @@ export default function ChatList() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (user) {
+      fetchChats();
+    }
+  }, [user]);
+
+  const fetchChats = async () => {
     if (!user) return;
 
-    const fetchChats = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('chats')
-          .select(`
-            id,
-            item_id,
-            last_message,
-            last_message_at,
-            participant:profiles!inner(
-              id,
-              name,
-              avatar_url
-            )
-          `)
-          .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
-          .order('last_message_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('chats')
+        .select(`
+          *,
+          participant:profiles(*)
+        `)
+        .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
+        .order('last_message_at', { ascending: false });
 
-        if (error) throw error;
-
-        setChats(data as Chat[]);
-      } catch (error) {
-        console.error('Error fetching chats:', error);
-        toast.error('Failed to load chats');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChats();
-
-    // Subscribe to new messages
-    const subscription = supabase
-      .channel('chats')
-      .on('INSERT', { event: '*', schema: 'public', table: 'messages' }, 
-          () => {
-            fetchChats();
-          })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user]);
+      if (error) throw error;
+      setChats(data);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+      toast.error('Failed to load chats');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -107,19 +87,13 @@ export default function ChatList() {
                 {chat.participant?.name}
               </p>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {chat.last_message_at && formatDistanceToNow(new Date(chat.last_message_at), { addSuffix: true })}
+                {chat.last_message_at && formatTimestamp(chat.last_message_at)}
               </span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               {chat.last_message}
             </p>
           </div>
-
-          {chat.unread_count > 0 && (
-            <div className="ml-2 bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-              {chat.unread_count}
-            </div>
-          )}
         </button>
       ))}
     </div>

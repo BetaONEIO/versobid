@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
@@ -20,6 +20,8 @@ export default function BiddingHistory() {
   }, [user]);
 
   const fetchBids = async () => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from('bids')
@@ -27,7 +29,7 @@ export default function BiddingHistory() {
           *,
           item:items(*)
         `)
-        .eq('seller_id', user?.id)
+        .eq('seller_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -56,13 +58,24 @@ export default function BiddingHistory() {
     );
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {bids.map((bid) => (
         <div
           key={bid.id}
           className="bg-white dark:bg-gray-700 rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate(`/item/${bid.item?.id}`)}
+          onClick={() => navigate(`/item/${bid.item_id}`)}
         >
           <div className="p-4">
             <div className="flex items-center justify-between">
@@ -70,15 +83,7 @@ export default function BiddingHistory() {
                 {bid.item?.title}
               </h3>
               <div className="flex items-center space-x-2">
-                {bid.status === 'accepted' && (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                )}
-                {bid.status === 'rejected' && (
-                  <XCircle className="h-5 w-5 text-red-500" />
-                )}
-                {bid.status === 'pending' && (
-                  <Clock className="h-5 w-5 text-yellow-500" />
-                )}
+                {getStatusIcon(bid.status)}
                 <span className="text-sm font-medium capitalize text-gray-600 dark:text-gray-300">
                   {bid.status}
                 </span>

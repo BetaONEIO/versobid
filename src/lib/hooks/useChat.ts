@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { Message, Chat } from '../../types';
+import { Message } from '../../types';
 import { useAuthStore } from '../../stores/authStore';
 import toast from 'react-hot-toast';
+
+interface ChatPayload {
+  new: Message;
+}
 
 export function useChat(chatId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -13,8 +17,11 @@ export function useChat(chatId: string) {
   useEffect(() => {
     if (chatId) {
       fetchMessages();
-      subscribeToMessages();
+      const unsubscribe = subscribeToMessages();
       markMessagesAsRead();
+      return () => {
+        unsubscribe();
+      };
     }
   }, [chatId]);
 
@@ -38,16 +45,24 @@ export function useChat(chatId: string) {
   };
 
   const subscribeToMessages = () => {
-    const subscription = supabase
+    const channel = supabase
       .channel(`chat:${chatId}`)
-      .on('INSERT', { event: '*', schema: 'public', table: 'messages' }, 
-          (payload) => {
-            setMessages(prev => [...prev, payload.new as Message]);
-          })
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chatId}`
+        },
+        (payload: ChatPayload) => {
+          setMessages(prev => [...prev, payload.new]);
+        }
+      )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   };
 

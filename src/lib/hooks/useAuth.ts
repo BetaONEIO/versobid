@@ -3,6 +3,13 @@ import { supabase } from '../supabase';
 import { User } from '../../types';
 import toast from 'react-hot-toast';
 
+interface AuthMetadata {
+  name: string;
+  username: string;
+  roles: string[];
+  [key: string]: any;
+}
+
 export function useAuth() {
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +22,7 @@ export function useAuth() {
       });
       
       if (error) throw error;
-      return data.user;
+      return data.user as unknown as User;
     } catch (error) {
       console.error('Error signing in:', error);
       toast.error('Failed to sign in');
@@ -25,7 +32,7 @@ export function useAuth() {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, metadata?: any): Promise<User | null> => {
+  const signUp = useCallback(async (email: string, password: string, metadata?: AuthMetadata): Promise<User | null> => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signUp({
@@ -37,7 +44,7 @@ export function useAuth() {
       });
       
       if (error) throw error;
-      return data.user;
+      return data.user as unknown as User;
     } catch (error) {
       console.error('Error signing up:', error);
       toast.error('Failed to sign up');

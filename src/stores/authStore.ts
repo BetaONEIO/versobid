@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { supabase, createProfile, getProfile } from '../lib/supabase';
-import { Profile } from '../types/database';
+import { supabase } from '../lib/supabase';
+import { User, Profile } from '../types';
 import toast from 'react-hot-toast';
 
 interface AuthState {
-  user: any;
+  user: User | null;
   profile: Profile | null;
   session: any;
   loading: boolean;
@@ -25,14 +25,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     try {
-      // Get initial session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        const profile = await getProfile(session.user.id);
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) throw error;
+
         set({ 
           session, 
-          user: session.user,
+          user: session.user as User,
           profile,
           initialized: true,
           loading: false 
@@ -47,11 +53,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
 
-      // Set up auth state change listener
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const profile = await getProfile(session.user.id);
-          set({ session, user: session.user, profile });
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error) throw error;
+
+          set({ 
+            session, 
+            user: session.user as User,
+            profile 
+          });
         } else if (event === 'SIGNED_OUT') {
           set({ session: null, user: null, profile: null });
         }
@@ -72,9 +88,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) throw error;
 
-      const profile = await getProfile(data.user.id);
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
       set({ 
-        user: data.user, 
+        user: data.user as User, 
         session: data.session,
         profile 
       });
@@ -105,19 +128,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error;
 
       if (data.user) {
-        // Create profile record
-        await createProfile(data.user.id, {
-          email: data.user.email,
-          name: metadata.name,
-          roles: metadata.roles,
-          items_count: 0,
-          successful_deals: 0,
-          rating: 5.0
-        });
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: data.user.id,
+            email: data.user.email,
+            name: metadata.name,
+            username: metadata.username,
+            roles: metadata.roles,
+            items_count: 0,
+            successful_deals: 0,
+            rating: 5.0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
 
-        const profile = await getProfile(data.user.id);
+        if (profileError) throw profileError;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
         set({ 
-          user: data.user, 
+          user: data.user as User, 
           session: data.session,
           profile 
         });
@@ -151,10 +186,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user } = get();
       if (!user) throw new Error('No user logged in');
 
-      await updateProfile(user.id, data);
-      const updatedProfile = await getProfile(user.id);
-      set({ profile: updatedProfile });
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...data,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
 
+      if (error) throw error;
+
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      set({ profile: updatedProfile });
       toast.success('Profile updated successfully');
     } catch (error: any) {
       toast.error(error.message);

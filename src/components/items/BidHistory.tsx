@@ -1,17 +1,13 @@
 import React from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Bid } from '../../types';
+import { formatTimestamp, formatCurrency } from '../../lib/utils';
 
 interface BidHistoryProps {
   bids: Bid[];
 }
 
 export default function BidHistory({ bids }: BidHistoryProps) {
-  const sortedBids = [...bids].sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'accepted':
@@ -23,17 +19,6 @@ export default function BidHistory({ bids }: BidHistoryProps) {
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return 'Accepted';
-      case 'rejected':
-        return 'Rejected';
-      default:
-        return 'Pending';
-    }
-  };
-
   return (
     <div className="mt-8">
       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -41,7 +26,7 @@ export default function BidHistory({ bids }: BidHistoryProps) {
       </h3>
 
       <div className="space-y-4">
-        {sortedBids.map((bid) => (
+        {bids.map((bid) => (
           <div
             key={bid.id}
             className="bg-white dark:bg-gray-800 shadow rounded-lg p-4"
@@ -57,7 +42,7 @@ export default function BidHistory({ bids }: BidHistoryProps) {
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     <span className="text-lg font-medium text-gray-600 dark:text-gray-300">
-                      {bid.seller?.name.charAt(0)}
+                      {bid.seller?.name?.charAt(0)}
                     </span>
                   </div>
                 )}
@@ -66,18 +51,18 @@ export default function BidHistory({ bids }: BidHistoryProps) {
                     {bid.seller?.name}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}
+                    {formatTimestamp(bid.created_at)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  ${bid.amount.toLocaleString()}
+                  {formatCurrency(bid.amount)}
                 </span>
                 <div className="flex items-center space-x-1">
                   {getStatusIcon(bid.status)}
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {getStatusText(bid.status)}
+                    {bid.status}
                   </span>
                 </div>
               </div>
