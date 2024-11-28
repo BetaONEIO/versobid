@@ -5,6 +5,7 @@ export interface SupabaseUser {
     name: string;
     role: 'buyer' | 'seller' | 'admin';
   };
+  profile?: SupabaseProfile;
 }
 
 export interface SupabaseProfile {

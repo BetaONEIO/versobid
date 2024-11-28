@@ -7,14 +7,7 @@ import PublicProfile from '../components/profile/PublicProfile';
 export default function Profile() {
   const { username } = useParams();
   const { user } = useAuthStore();
+  const isOwnProfile = !username || user?.profile?.username === username;
 
-  // If no username is provided, or the username matches the current user,
-  // show private profile view
-  const isOwnProfile = !username || (user?.profile?.username === username);
-
-  if (isOwnProfile) {
-    return <PrivateProfile />;
-  }
-
-  return <PublicProfile username={username} />;
+  return isOwnProfile ? <PrivateProfile /> : <PublicProfile username={username!} />;
 }

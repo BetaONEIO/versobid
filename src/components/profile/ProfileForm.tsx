@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useProfile } from '../../lib/hooks/useProfile';
 import { useAuthStore } from '../../stores/authStore';
+import { ProfileFormData } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function ProfileForm() {
-  const { user, updateProfile } = useAuthStore();
+  const { user } = useAuthStore();
+  const { profile, updateProfile } = useProfile(user?.id);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.profile?.name || '',
-    bio: user?.profile?.bio || '',
-    location: user?.profile?.location || '',
-    website: user?.profile?.website || '',
-    company: user?.profile?.company || '',
+  const [formData, setFormData] = useState<ProfileFormData>({
+    name: profile?.name || '',
+    username: profile?.username || '',
+    bio: profile?.bio || '',
+    location: profile?.location || '',
+    website: profile?.website || '',
+    company: profile?.company || '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,12 +24,16 @@ export default function ProfileForm() {
 
     try {
       await updateProfile(formData);
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
+
+  if (!profile) return null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -39,6 +47,19 @@ export default function ProfileForm() {
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Username
+        </label>
+        <input
+          type="text"
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
         />
       </div>
 

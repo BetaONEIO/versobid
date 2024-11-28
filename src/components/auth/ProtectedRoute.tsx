@@ -16,7 +16,8 @@ export default function ProtectedRoute({ children, role }: ProtectedRouteProps) 
     return <Navigate to="/auth" />;
   }
 
-  if (role && user.user_metadata?.role !== role) {
+  const userRole = user.profile?.roles?.[0] || 'buyer';
+  if (role && userRole !== role) {
     return <Navigate to="/" />;
   }
 

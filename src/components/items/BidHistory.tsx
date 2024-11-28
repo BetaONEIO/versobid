@@ -8,6 +8,10 @@ interface BidHistoryProps {
 }
 
 export default function BidHistory({ bids }: BidHistoryProps) {
+  const sortedBids = [...bids].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'accepted':
@@ -26,7 +30,7 @@ export default function BidHistory({ bids }: BidHistoryProps) {
       </h3>
 
       <div className="space-y-4">
-        {bids.map((bid) => (
+        {sortedBids.map((bid) => (
           <div
             key={bid.id}
             className="bg-white dark:bg-gray-800 shadow rounded-lg p-4"
