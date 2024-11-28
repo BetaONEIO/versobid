@@ -36,7 +36,7 @@ export function useChat(chatId: string) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data);
+      setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('Failed to load messages');
