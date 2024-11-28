@@ -17,7 +17,10 @@ export default function ChatList() {
   useEffect(() => {
     if (user) {
       fetchChats();
-      subscribeToChats();
+      const unsubscribe = subscribeToChats();
+      return () => {
+        unsubscribe();
+      };
     }
   }, [user]);
 
@@ -45,7 +48,7 @@ export default function ChatList() {
   };
 
   const subscribeToChats = () => {
-    if (!user) return;
+    if (!user) return () => {};
 
     const channel = supabase
       .channel('chats')
