@@ -3,15 +3,8 @@ import { Send, Loader2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { formatDistanceToNow } from 'date-fns';
+import { Message } from '../../types';
 import toast from 'react-hot-toast';
-
-interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-  image_url?: string;
-}
 
 interface ChatWindowProps {
   chatId: string;
@@ -73,12 +66,14 @@ export default function ChatWindow({ chatId, recipientId, itemId }: ChatWindowPr
   };
 
   const markMessagesAsRead = async () => {
+    if (!user) return;
+    
     try {
       await supabase
         .from('messages')
         .update({ read: true })
         .eq('chat_id', chatId)
-        .eq('recipient_id', user?.id)
+        .eq('recipient_id', user.id)
         .eq('read', false);
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -91,7 +86,7 @@ export default function ChatWindow({ chatId, recipientId, itemId }: ChatWindowPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user) return;
 
     try {
       setSending(true);
@@ -100,7 +95,7 @@ export default function ChatWindow({ chatId, recipientId, itemId }: ChatWindowPr
         .insert([
           {
             chat_id: chatId,
-            sender_id: user?.id,
+            sender_id: user.id,
             recipient_id: recipientId,
             content: newMessage,
             item_id: itemId
@@ -119,12 +114,11 @@ export default function ChatWindow({ chatId, recipientId, itemId }: ChatWindowPr
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
 
     try {
       setUploadingImage(true);
       
-      // Upload image
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `chat-images/${fileName}`;
@@ -135,18 +129,16 @@ export default function ChatWindow({ chatId, recipientId, itemId }: ChatWindowPr
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('chat-images')
         .getPublicUrl(filePath);
 
-      // Send message with image
       const { error: messageError } = await supabase
         .from('messages')
         .insert([
           {
             chat_id: chatId,
-            sender_id: user?.id,
+            sender_id: user.id,
             recipient_id: recipientId,
             content: 'Sent an image',
             image_url: publicUrl,

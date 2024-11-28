@@ -1,18 +1,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
-
-interface Bid {
-  id: string;
-  amount: number;
-  created_at: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  seller: {
-    name: string;
-    avatar_url?: string;
-  };
-  notes?: string;
-}
+import { Bid } from '../../types';
 
 interface BidHistoryProps {
   bids: Bid[];
@@ -59,7 +48,7 @@ export default function BidHistory({ bids }: BidHistoryProps) {
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                {bid.seller.avatar_url ? (
+                {bid.seller?.avatar_url ? (
                   <img
                     src={bid.seller.avatar_url}
                     alt={bid.seller.name}
@@ -68,13 +57,13 @@ export default function BidHistory({ bids }: BidHistoryProps) {
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     <span className="text-lg font-medium text-gray-600 dark:text-gray-300">
-                      {bid.seller.name.charAt(0)}
+                      {bid.seller?.name.charAt(0)}
                     </span>
                   </div>
                 )}
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {bid.seller.name}
+                    {bid.seller?.name}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}
