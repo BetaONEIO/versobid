@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Bid } from '../../types';
+import { formatCurrency, formatTimestamp } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 export default function BiddingHistory() {
-  const [bids, setBids] = useState([]);
+  const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchBids();
-  }, []);
+    if (user) {
+      fetchBids();
+    }
+  }, [user]);
 
   const fetchBids = async () => {
     try {
@@ -58,12 +62,12 @@ export default function BiddingHistory() {
         <div
           key={bid.id}
           className="bg-white dark:bg-gray-700 rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate(`/item/${bid.item.id}`)}
+          onClick={() => navigate(`/item/${bid.item?.id}`)}
         >
           <div className="p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {bid.item.title}
+                {bid.item?.title}
               </h3>
               <div className="flex items-center space-x-2">
                 {bid.status === 'accepted' && (
@@ -82,10 +86,10 @@ export default function BiddingHistory() {
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${bid.amount}
+                {formatCurrency(bid.amount)}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {new Date(bid.created_at).toLocaleDateString()}
+                {formatTimestamp(bid.created_at)}
               </span>
             </div>
             {bid.notes && (

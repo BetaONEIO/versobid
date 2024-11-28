@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Clock, DollarSign } from 'lucide-react';
+import { Item } from '../../types';
+import { formatCurrency, formatTimestamp } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 export default function ListedItems() {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchItems();
-  }, []);
+    if (user) {
+      fetchItems();
+    }
+  }, [user]);
 
   const fetchItems = async () => {
     try {
@@ -80,12 +84,12 @@ export default function ListedItems() {
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center text-gray-600 dark:text-gray-300">
                 <DollarSign className="h-5 w-5 text-green-500" />
-                <span className="ml-1 font-medium">${item.target_price}</span>
+                <span className="ml-1 font-medium">{formatCurrency(item.target_price)}</span>
               </div>
               <div className="flex items-center text-gray-500 dark:text-gray-400">
                 <Clock className="h-4 w-4 mr-1" />
                 <span className="text-sm">
-                  {new Date(item.created_at).toLocaleDateString()}
+                  {formatTimestamp(item.created_at)}
                 </span>
               </div>
             </div>
