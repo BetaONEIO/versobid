@@ -35,7 +35,7 @@ export default function ChatList() {
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;
-      setChats(data);
+      setChats(data || []);
     } catch (error) {
       console.error('Error fetching chats:', error);
       toast.error('Failed to load chats');

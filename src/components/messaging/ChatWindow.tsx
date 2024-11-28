@@ -1,3 +1,4 @@
+```typescript
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useChat } from '../../lib/hooks/useChat';
@@ -140,3 +141,4 @@ export default function ChatWindow({ chatId, recipientId, itemId }: ChatWindowPr
     </div>
   );
 }
+```
