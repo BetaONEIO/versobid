@@ -1,9 +1,21 @@
-export { default as Auth } from './Auth';
-export { default as ComingSoon } from './ComingSoon';
-export { default as CreateItem } from './CreateItem';
-export { default as ItemDetails } from './ItemDetails';
-export { default as Marketplace } from './Marketplace';
-export { default as Messages } from './Messages';
-export { default as Privacy } from './Privacy';
-export { default as Profile } from './Profile';
-export { default as Terms } from './Terms';
+import Auth from './Auth';
+import ComingSoon from './ComingSoon';
+import CreateItem from './CreateItem';
+import ItemDetails from './ItemDetails';
+import Marketplace from './Marketplace';
+import Messages from './Messages';
+import Privacy from './Privacy';
+import Profile from './Profile';
+import Terms from './Terms';
+
+export {
+  Auth,
+  ComingSoon,
+  CreateItem,
+  ItemDetails,
+  Marketplace,
+  Messages,
+  Privacy,
+  Profile,
+  Terms
+};

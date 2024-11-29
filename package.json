@@ -10,9 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mailchimp/mailchimp_marketing": "^3.0.80",
-    "@netlify/functions": "^2.6.0",
-    "@sendgrid/mail": "^7.7.0",
     "@supabase/supabase-js": "^2.39.7",
     "date-fns": "^3.3.1",
     "lucide-react": "^0.344.0",
@@ -23,13 +20,11 @@
     "zustand": "^4.5.1"
   },
   "devDependencies": {
-    "@types/mailchimp__mailchimp_marketing": "^3.0.17",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
-    "@types/sendgrid": "^4.3.0",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2", 
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
     "eslint": "^8.56.0",

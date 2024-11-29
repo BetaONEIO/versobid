@@ -1,5 +1,30 @@
-var __makeTemplateObject = (this && this.__makeTemplateObject) || function (cooked, raw) {
-    if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-    return cooked;
-};
-""(__makeTemplateObject(["typescript\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: {\n      '@': path.resolve(__dirname, './src'),\n    },\n  },\n  build: {\n    outDir: 'dist',\n    sourcemap: true,\n    rollupOptions: {\n      input: {\n        main: path.resolve(__dirname, 'index.html'),\n      },\n    },\n  },\n  server: {\n    proxy: {\n      '/.netlify/functions': {\n        target: 'http://localhost:8888',\n        changeOrigin: true,\n      },\n    },\n  },\n});\n"], ["typescript\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport path from 'path';\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: {\n    alias: {\n      '@': path.resolve(__dirname, './src'),\n    },\n  },\n  build: {\n    outDir: 'dist',\n    sourcemap: true,\n    rollupOptions: {\n      input: {\n        main: path.resolve(__dirname, 'index.html'),\n      },\n    },\n  },\n  server: {\n    proxy: {\n      '/.netlify/functions': {\n        target: 'http://localhost:8888',\n        changeOrigin: true,\n      },\n    },\n  },\n});\n"]))(__makeTemplateObject([""], [""]));
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
+    },
+  },
+  server: {
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+      },
+    },
+  },
+});
