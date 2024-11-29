@@ -37,12 +37,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
-var mailchimp_marketing_1 = require("@mailchimp/mailchimp_marketing");
+var mail_1 = require("@sendgrid/mail");
 var handler = function (event) { return __awaiter(void 0, void 0, void 0, function () {
-    var headers, email, response, error_1;
-    var _a, _b;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+    var headers, email, msg, error_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 headers = {
                     'Access-Control-Allow-Origin': '*',
@@ -60,9 +59,9 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                             body: JSON.stringify({ error: 'Method not allowed' })
                         }];
                 }
-                _c.label = 1;
+                _a.label = 1;
             case 1:
-                _c.trys.push([1, 3, , 4]);
+                _a.trys.push([1, 3, , 4]);
                 email = JSON.parse(event.body || '{}').email;
                 if (!email) {
                     console.log('Email is required');
@@ -72,47 +71,29 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                             body: JSON.stringify({ error: 'Email is required' })
                         }];
                 }
-                console.log('Configuring Mailchimp...');
-                mailchimp_marketing_1.default.setConfig({
-                    apiKey: process.env.MAILCHIMP_API_KEY || '',
-                    server: process.env.MAILCHIMP_SERVER_PREFIX || ''
-                });
-                console.log('Adding member to list...');
-                return [4 /*yield*/, mailchimp_marketing_1.default.lists.addListMember(process.env.MAILCHIMP_LIST_ID || '', {
-                        email_address: email,
-                        status: 'subscribed',
-                        merge_fields: {
-                            FNAME: '',
-                            LNAME: '',
-                            SIGNUP_SRC: 'Coming Soon Page',
-                            SIGNUP_DATE: new Date().toISOString().split('T')[0]
-                        }
-                    })];
+                mail_1.default.setApiKey(process.env.SENDGRID_API_KEY || '');
+                console.log('New subscriber:', email);
+                msg = {
+                    to: email,
+                    from: 'hello@versobid.com',
+                    subject: 'Welcome to VersoBid!',
+                    html: "\n        <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n          <h1 style=\"color: #4F46E5;\">Welcome to VersoBid!</h1>\n          <p>Thanks for joining our waitlist!</p>\n        </div>\n      "
+                };
+                return [4 /*yield*/, mail_1.default.send(msg)];
             case 2:
-                response = _c.sent();
-                console.log('Successfully added member:', response.id);
+                _a.sent();
+                console.log('Welcome email sent to:', email);
                 return [2 /*return*/, {
                         statusCode: 200,
                         headers: headers,
                         body: JSON.stringify({
                             success: true,
-                            message: 'Successfully subscribed to the waitlist!',
-                            id: response.id
+                            message: 'Successfully subscribed to the waitlist!'
                         })
                     }];
             case 3:
-                error_1 = _c.sent();
+                error_1 = _a.sent();
                 console.error('Subscription error:', error_1);
-                if (((_b = (_a = error_1.response) === null || _a === void 0 ? void 0 : _a.body) === null || _b === void 0 ? void 0 : _b.title) === 'Member Exists') {
-                    return [2 /*return*/, {
-                            statusCode: 200,
-                            headers: headers,
-                            body: JSON.stringify({
-                                success: true,
-                                message: 'You\'re already subscribed to our waitlist!'
-                            })
-                        }];
-                }
                 return [2 /*return*/, {
                         statusCode: 500,
                         headers: headers,
