@@ -1,75 +1,15 @@
 ```typescript
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, User } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { useChat } from '../../lib/hooks/useChat';
 import { useAuthStore } from '../../stores/authStore';
-import { Chat } from '../../types';
 import { formatTimestamp } from '../../lib/utils';
-import toast from 'react-hot-toast';
 
 export default function ChatList() {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuthStore();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      fetchChats();
-      const unsubscribe = subscribeToChats();
-      return () => {
-        unsubscribe();
-      };
-    }
-  }, [user]);
-
-  const fetchChats = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('chats')
-        .select(`
-          *,
-          participant:profiles(*)
-        `)
-        .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false });
-
-      if (error) throw error;
-      setChats(data || []);
-    } catch (error) {
-      console.error('Error fetching chats:', error);
-      toast.error('Failed to load chats');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const subscribeToChats = () => {
-    if (!user) return () => {};
-
-    const channel = supabase
-      .channel('chats')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `recipient_id=eq.${user.id}`
-        },
-        () => {
-          fetchChats();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
+  const { user } = useAuthStore();
+  const { chats, loading } = useChat('');
 
   if (loading) {
     return (
@@ -124,6 +64,12 @@ export default function ChatList() {
               {chat.last_message}
             </p>
           </div>
+
+          {chat.unread_count > 0 && (
+            <div className="ml-2 bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+              {chat.unread_count}
+            </div>
+          )}
         </button>
       ))}
     </div>

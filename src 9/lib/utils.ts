@@ -21,27 +21,21 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-export const generateId = (): string => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+export const mapSnakeToCamel = <T extends Record<string, any>>(obj: T): Record<string, any> => {
+  const newObj: Record<string, any> = {};
+  Object.keys(obj).forEach(key => {
+    const camelKey = key.replace(/_([a-z])/g, g => g[1].toUpperCase());
+    newObj[camelKey] = obj[key];
+  });
+  return newObj;
 };
 
-export const validateEmail = (email: string): boolean => {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-};
-
-export const getInitials = (name: string): string => {
-  return name
-    .split(' ')
-    .map(part => part.charAt(0))
-    .join('')
-    .toUpperCase();
-};
-
-export const slugify = (text: string): string => {
-  return text
-    .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
+export const mapCamelToSnake = <T extends Record<string, any>>(obj: T): Record<string, any> => {
+  const newObj: Record<string, any> = {};
+  Object.keys(obj).forEach(key => {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    newObj[snakeKey] = obj[key];
+  });
+  return newObj;
 };
 ```

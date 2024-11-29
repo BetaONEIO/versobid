@@ -1,7 +1,7 @@
 ```typescript
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, DollarSign, MapPin, Tag, AlertCircle } from 'lucide-react';
+import { Clock, DollarSign, Tag, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUserContext } from '../context/UserContext';
 import { Item } from '../types';
@@ -60,7 +60,6 @@ export default function ItemDetails() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-lg font-medium text-gray-900">Item not found</h3>
           <p className="mt-1 text-sm text-gray-500">The item you're looking for doesn't exist or has been removed.</p>
           <div className="mt-6">
@@ -80,7 +79,7 @@ export default function ItemDetails() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <ItemImageGallery images={[item.image_url || '']} />
+          <ItemImageGallery images={[item.imageUrl || '']} />
         </div>
 
         <div className="space-y-6">
@@ -103,7 +102,7 @@ export default function ItemDetails() {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
               <DollarSign className="h-5 w-5" />
-              <span>Target Price: {formatCurrency(item.target_price)}</span>
+              <span>Target Price: {formatCurrency(item.targetPrice)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
               <Clock className="h-5 w-5" />

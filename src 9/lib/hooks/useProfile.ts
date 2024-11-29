@@ -11,7 +11,7 @@ export function useProfile(userId?: string) {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    if (userId || user?.id) {
+    if (userId || (user && user.id)) {
       fetchProfile(userId || user.id);
     }
   }, [userId, user]);
