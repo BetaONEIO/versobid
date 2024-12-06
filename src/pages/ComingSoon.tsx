@@ -57,7 +57,7 @@ export default function ComingSoon() {
           </div>
           
           <h2 className="text-2xl md:text-3xl font-semibold text-white/90">
-            The Future of Reverse Auctions
+            The Future of Auctions
           </h2>
           
           <p className="text-lg text-white/80 max-w-xl mx-auto">
