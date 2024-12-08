@@ -19,12 +19,14 @@ export const Header: React.FC = () => {
             </Link>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-            <Link
-              to="/bids"
-              className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100"
-            >
-              Bids
-            </Link>
+            {auth.isAuthenticated && (
+              <Link
+                to="/bids"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100"
+              >
+                Bids
+              </Link>
+            )}
             {!auth.isAuthenticated ? (
               <Link
                 to="/signin"
@@ -42,7 +44,7 @@ export const Header: React.FC = () => {
             )}
           </div>
           <div className="flex items-center space-x-4">
-            <RoleToggle />
+            {auth.isAuthenticated && <RoleToggle />}
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
