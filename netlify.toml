@@ -9,21 +9,22 @@
   force = true
 
 [[headers]]
-  for = "/*"
+  for = "/assets/*"
     [headers.values]
-    Access-Control-Allow-Origin = "*"
+    Content-Type = "application/javascript"
+    X-Content-Type-Options = "nosniff"
 
-# Handle JavaScript files
 [[headers]]
   for = "/*.js"
     [headers.values]
     Content-Type = "application/javascript"
+    X-Content-Type-Options = "nosniff"
 
-# Handle CSS files  
 [[headers]]
   for = "/*.css"
     [headers.values]
     Content-Type = "text/css"
+    X-Content-Type-Options = "nosniff"
 
 [build.environment]
   NODE_VERSION = "18"
