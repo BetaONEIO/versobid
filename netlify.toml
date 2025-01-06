@@ -6,11 +6,24 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true
 
 [[headers]]
-  for = "/assets/*"
-  [headers.values]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+
+# Handle JavaScript files
+[[headers]]
+  for = "/*.js"
+    [headers.values]
     Content-Type = "application/javascript"
+
+# Handle CSS files  
+[[headers]]
+  for = "/*.css"
+    [headers.values]
+    Content-Type = "text/css"
 
 [build.environment]
   NODE_VERSION = "18"
