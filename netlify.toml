@@ -6,12 +6,11 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  force = true
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Content-Type = "application/javascript"
 
 [build.environment]
   NODE_VERSION = "18"
-
-# Custom domain configuration
-[context.production]
-  [context.production.environment]
-    SITE_URL = "https://test.versobid.com"
