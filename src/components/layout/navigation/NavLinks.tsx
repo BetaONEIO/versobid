@@ -11,13 +11,14 @@ export const NavLinks: React.FC<NavLinksProps> = ({ role, isAdmin }) => {
   const sellerLinks = [
     { to: '/', label: 'Home' },
     { to: '/listings', label: 'Browse Items' },
-    { to: '/bids', label: 'My Bids' },
+    { to: '/bids/received', label: 'Bids Received' },
     { to: '/help', label: 'Help' },
   ];
 
   const buyerLinks = [
     { to: '/', label: 'Home' },
     { to: '/items/add', label: 'Post Wanted Item' },
+    { to: '/listings', label: 'My Listings' },
     { to: '/bids', label: 'My Bids' },
     { to: '/help', label: 'Help' },
   ];

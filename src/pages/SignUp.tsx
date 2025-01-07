@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AuthFormData } from '../types';
-import { validateName, validateUsername, validateEmail, validatePassword } from '../utils/validation';
-import { userService } from '../services/userService';
 import { useUser } from '../contexts/UserContext';
 import { useNotification } from '../contexts/NotificationContext';
-
-interface FormErrors {
-  name: string | null;
-  username: string | null;
-  email: string | null;
-  password: string | null;
-  terms: string | null;
-}
+import { TermsModal } from '../components/ui/TermsModal';
+import { PrivacyModal } from '../components/ui/PrivacyModal';
+import { userService } from '../services/userService';
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +13,8 @@ export const SignUp: React.FC = () => {
   const { addNotification } = useNotification();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [formData, setFormData] = useState<AuthFormData>({
     email: '',
     password: '',
@@ -27,84 +22,28 @@ export const SignUp: React.FC = () => {
     username: '',
   });
 
-  const [errors, setErrors] = useState<FormErrors>({
-    name: null,
-    username: null,
-    email: null,
-    password: null,
-    terms: null,
-  });
-
-  const validateField = (field: keyof FormErrors, value: string) => {
-    switch (field) {
-      case 'name':
-        return validateName(value);
-      case 'username':
-        return validateUsername(value);
-      case 'email':
-        return validateEmail(value);
-      case 'password':
-        return validatePassword(value);
-      default:
-        return null;
-    }
-  };
-
   const handleChange = (field: keyof AuthFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setErrors(prev => ({
+    setFormData(prev => ({
       ...prev,
-      [field]: validateField(field as keyof FormErrors, value),
+      [field]: value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!acceptedTerms) {
-      setErrors(prev => ({
-        ...prev,
-        terms: 'You must accept the Terms & Conditions and Privacy Policy'
-      }));
-      return;
-    }
-
-    // Validate all fields
-    const newErrors: FormErrors = {
-      name: validateName(formData.name || ''),
-      username: validateUsername(formData.username || ''),
-      email: validateEmail(formData.email),
-      password: validatePassword(formData.password),
-      terms: !acceptedTerms ? 'You must accept the Terms & Conditions and Privacy Policy' : null,
-    };
-
-    setErrors(newErrors);
-
-    // Check if there are any errors
-    if (Object.values(newErrors).some(error => error !== null)) {
+      addNotification('error', 'Please accept the Terms & Conditions');
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       const user = await userService.signup(formData);
       login(user);
-      addNotification('success', 'Account created successfully! Welcome to VersoBid.');
+      addNotification('success', 'Account created successfully!');
       navigate('/');
     } catch (error) {
-      if (error instanceof Error) {
-        // Handle specific error messages
-        if (error.message.includes('email')) {
-          setErrors(prev => ({ ...prev, email: 'This email is already registered' }));
-        } else if (error.message.includes('username')) {
-          setErrors(prev => ({ ...prev, username: 'This username is already taken' }));
-        } else {
-          addNotification('error', error.message);
-        }
-      } else {
-        addNotification('error', 'Failed to create account. Please try again.');
-      }
+      addNotification('error', 'Failed to create account');
     } finally {
       setIsSubmitting(false);
     }
@@ -113,117 +52,66 @@ export const SignUp: React.FC = () => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300">
-            Already have an account?{' '}
-            <Link
-              to="/signin"
-              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm space-y-4">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Full name
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
               </label>
               <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
+                id="email"
+                type="email"
                 required
-                disabled={isSubmitting}
-                className={`mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
-                } dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="Full name"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
-              )}
             </div>
+
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Username
               </label>
               <input
                 id="username"
-                name="username"
                 type="text"
-                autoComplete="username"
                 required
-                disabled={isSubmitting}
-                className={`mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border ${
-                  errors.username ? 'border-red-300' : 'border-gray-300'
-                } dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="Username"
                 value={formData.username}
                 onChange={(e) => handleChange('username', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.username}</p>
-              )}
             </div>
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email address
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Full Name
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="name"
+                type="text"
                 required
-                disabled={isSubmitting}
-                className={`mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border ${
-                  errors.email ? 'border-red-300' : 'border-gray-300'
-                } dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="Email address"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
-              )}
             </div>
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
-                autoComplete="new-password"
                 required
-                disabled={isSubmitting}
-                className={`mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border ${
-                  errors.password ? 'border-red-300' : 'border-gray-300'
-                } dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="Password"
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
-              )}
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Password must be 6-20 characters and include at least one uppercase letter, 
-                one number, and one special character.
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center">
+          <div className="mt-4 flex items-center">
             <input
               id="terms"
               name="terms"
@@ -234,29 +122,35 @@ export const SignUp: React.FC = () => {
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
               I agree to the{' '}
-              <a href="/terms" className="text-indigo-600 hover:text-indigo-500">
+              <button
+                type="button"
+                onClick={() => setIsTermsOpen(true)}
+                className="text-indigo-600 hover:text-indigo-500"
+              >
                 Terms & Conditions
-              </a>{' '}
+              </button>{' '}
               and{' '}
-              <a href="/privacy" className="text-indigo-600 hover:text-indigo-500">
+              <button
+                type="button"
+                onClick={() => setIsPrivacyOpen(true)}
+                className="text-indigo-600 hover:text-indigo-500"
+              >
                 Privacy Policy
-              </a>
+              </button>
             </label>
           </div>
-          {errors.terms && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.terms}</p>
-          )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Creating account...' : 'Create account'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full mt-4 px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Creating account...' : 'Create account'}
+          </button>
         </form>
+
+        <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+        <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
       </div>
     </div>
   );
