@@ -38,9 +38,21 @@ export const itemService = {
   },
 
   async createItem(item: ItemFormData & { seller_id: string; status: string }): Promise<Item> {
+    // Map the data to match database column names
+    const mappedItem = {
+      title: item.title,
+      description: item.description,
+      min_price: item.minPrice,
+      max_price: item.maxPrice,
+      seller_id: item.seller_id,
+      category: item.category,
+      shipping_options: item.shipping_options,
+      status: item.status
+    };
+
     const { data, error } = await supabase
       .from('items')
-      .insert([item])
+      .insert([mappedItem])
       .select()
       .single();
 

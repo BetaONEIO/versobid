@@ -12,7 +12,7 @@ export const profileService = {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -29,11 +29,7 @@ export const profileService = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .insert([{
-          ...profile,
-          created_at: new Date().toISOString(),
-          is_admin: false
-        }])
+        .insert([profile])
         .select()
         .single();
 

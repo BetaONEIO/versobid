@@ -1,9 +1,16 @@
-export type ShippingType = 'shipping' | 'pickup';
+export type ShippingType = 'shipping' | 'seller-dropoff' | 'seller-pickup';
+
+export interface PickupLocation {
+  postcode: string;
+  town: string;
+  maxDistance?: number;
+  address?: string;
+}
 
 export interface ShippingOption {
   type: ShippingType;
   cost?: number;
-  location?: string;
+  location?: PickupLocation;
 }
 
 export interface ItemFormData {
