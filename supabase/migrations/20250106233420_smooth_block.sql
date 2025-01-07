@@ -1,25 +1,27 @@
--- Drop existing policies first
+-- Drop existing policies by name
+DROP POLICY IF EXISTS "profiles_select_policy_v4" ON profiles;
+DROP POLICY IF EXISTS "profiles_insert_policy_v4" ON profiles;
+DROP POLICY IF EXISTS "profiles_update_policy_v4" ON profiles;
+DROP POLICY IF EXISTS "profiles_select_v3" ON profiles;
+DROP POLICY IF EXISTS "profiles_insert_v3" ON profiles;
+DROP POLICY IF EXISTS "profiles_update_v3" ON profiles;
 DROP POLICY IF EXISTS "allow_email_existence_check" ON profiles;
-DROP POLICY IF EXISTS "profiles_select_policy" ON profiles;
-DROP POLICY IF EXISTS "profiles_insert_policy" ON profiles;
-DROP POLICY IF EXISTS "profiles_update_policy" ON profiles;
 DROP POLICY IF EXISTS "public_profiles_access" ON profiles;
-DROP POLICY IF EXISTS "allow_email_checks" ON profiles;
 
--- Create new unified policies with unique names
-CREATE POLICY "profiles_public_read"
+-- Create new policies with unique names
+CREATE POLICY "profiles_select_policy_v5"
   ON profiles
   FOR SELECT
   TO authenticated, anon
   USING (true);
 
-CREATE POLICY "profiles_auth_insert"
+CREATE POLICY "profiles_insert_policy_v5"
   ON profiles
   FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "profiles_auth_update"
+CREATE POLICY "profiles_update_policy_v5"
   ON profiles
   FOR UPDATE
   TO authenticated

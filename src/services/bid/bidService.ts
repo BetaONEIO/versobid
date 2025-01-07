@@ -1,6 +1,5 @@
 import { supabase } from '../../lib/supabase';
 import { Bid, BidStatus } from '../../types/bid';
-import { emailService } from '../email/emailService';
 
 export const bidService = {
   async createBid(bid: Partial<Bid>): Promise<Bid> {
@@ -20,7 +19,7 @@ export const bidService = {
     const { data: item } = await supabase
       .from('items')
       .select('title, seller_id')
-      .eq('id', bid.itemId)
+      .eq('id', bid.item_id)
       .single();
 
     if (item) {
@@ -32,15 +31,11 @@ export const bidService = {
 
       if (seller) {
         try {
-          await emailService.sendEmail({
-            to: seller.email,
-            subject: 'New Bid Received',
-            templateName: 'new-bid',
-            params: {
-              item_title: item.title,
-              bid_amount: bid.amount!,
-              item_link: `${window.location.origin}/items/${bid.itemId}`
-            }
+          await supabase.rpc('notify_seller', {
+            seller_email: seller.email,
+            item_title: item.title,
+            bid_amount: bid.amount!,
+            item_link: `${window.location.origin}/items/${bid.item_id}`
           });
         } catch (emailError) {
           console.error('Failed to send bid notification email:', emailError);
@@ -58,32 +53,5 @@ export const bidService = {
       .eq('id', bidId);
 
     if (error) throw error;
-
-    if (status === 'accepted') {
-      // Get bid details
-      const { data: bid } = await supabase
-        .from('bids')
-        .select('*, items(*), profiles(*)')
-        .eq('id', bidId)
-        .single();
-
-      if (bid) {
-        try {
-          await emailService.sendEmail({
-            to: bid.profiles.email,
-            subject: 'Your Bid Was Accepted!',
-            templateName: 'bid-accepted',
-            params: {
-              item_title: bid.items.title,
-              bid_amount: bid.amount,
-              seller_name: bid.items.seller_name,
-              payment_link: `/payment/${bidId}`
-            }
-          });
-        } catch (emailError) {
-          console.error('Failed to send bid accepted email:', emailError);
-        }
-      }
-    }
   }
 };

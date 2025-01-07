@@ -1,14 +1,13 @@
 import React from 'react';
-import { Bid, BidStatus } from '../../types/bid';
-import { Item } from '../../types/item';
+import { Bid } from '../../types/bid';
 
 interface BidCardProps {
-  bid: Bid & { item?: Item };
+  bid: Bid;
   onSelect?: (bid: Bid) => void;
 }
 
 export const BidCard: React.FC<BidCardProps> = ({ bid, onSelect }) => {
-  const getStatusColor = (status: BidStatus) => {
+  const getStatusColor = (status: Bid['status']) => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
@@ -29,7 +28,6 @@ export const BidCard: React.FC<BidCardProps> = ({ bid, onSelect }) => {
       onClick={() => onSelect?.(bid)}
     >
       <h3 className="text-lg font-semibold text-gray-900">{bid.item?.title || 'Untitled Item'}</h3>
-      <p className="mt-2 text-sm text-gray-600">{bid.item?.description || 'No description available'}</p>
       <div className="mt-4 flex justify-between items-center">
         <span className="text-lg font-medium text-gray-900">
           ${bid.amount.toLocaleString()}

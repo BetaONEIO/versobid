@@ -2,23 +2,24 @@ export type BidStatus = 'pending' | 'accepted' | 'rejected' | 'countered';
 
 export interface Bid {
   id: string;
-  itemId: string;
-  sellerId: string;
+  item_id: string;
+  bidder_id: string;
   amount: number;
   message?: string;
-  shippingOption: string;
   status: BidStatus;
-  createdAt: string;
-}
-
-export interface BidFormData {
-  amount: number;
-  message?: string;
-  shippingOption: string;
-}
-
-export interface BidResponse {
-  success: boolean;
-  message: string;
-  bid?: Bid;
+  created_at: string;
+  bidder?: {
+    username: string;
+  };
+  item?: {
+    id: string;
+    title: string;
+    description?: string;
+    minPrice: number;
+    maxPrice: number;
+    seller_id: string;
+    category: string;
+    status: string;
+    created_at: string;
+  };
 }

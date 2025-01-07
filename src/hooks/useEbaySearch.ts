@@ -2,34 +2,35 @@ import { useState } from 'react';
 import { SearchResult } from '../types/search';
 import { ebayService } from '../services/ebay/ebayService';
 import { useNotification } from '../contexts/NotificationContext';
+import { debounce } from '../utils/debounce';
 
 export const useEbaySearch = () => {
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const { addNotification } = useNotification();
 
-  const searchItems = async (query: string) => {
+  const searchItems = debounce(async (query: string) => {
     if (!query || query.length < 3) {
-      setResults([]);
+      setSuggestions([]);
       return;
     }
 
     setLoading(true);
     try {
-      const searchResults = await ebayService.searchItems(query);
-      setResults(searchResults);
+      const results = await ebayService.searchItems(query);
+      setSuggestions(results);
     } catch (error) {
       console.error('Failed to fetch suggestions:', error);
       addNotification('error', 'Failed to fetch item suggestions');
-      setResults([]);
+      setSuggestions([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, 300);
 
   return {
     loading,
-    results,
+    suggestions,
     searchItems
   };
 };

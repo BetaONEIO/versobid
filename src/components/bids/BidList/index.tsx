@@ -1,6 +1,6 @@
 import React from 'react';
-import { Bid } from '../../types/bid';
-import { BidCard } from './BidCard';
+import { Bid } from '../../../types/bid';
+import { BidCard } from '../BidCard';
 
 interface BidListProps {
   bids: Bid[];

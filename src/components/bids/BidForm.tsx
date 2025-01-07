@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { BidFormData } from '../../types/bid';
-import { Item, ShippingOption } from '../../types/item';
 import { useUser } from '../../contexts/UserContext';
+import { Item } from '../../types/item';
 import { bidService } from '../../services/bidService';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -13,24 +12,15 @@ interface BidFormProps {
 export const BidForm: React.FC<BidFormProps> = ({ item, onBidSubmitted }) => {
   const { auth } = useUser();
   const { addNotification } = useNotification();
-  const [formData, setFormData] = useState<BidFormData>({
-    amount: item.minPrice,
-    message: '',
-    shippingOption: item.shipping_options[0]?.type || 'shipping'
-  });
+  const [amount, setAmount] = useState<number>(item.minPrice);
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.user) return;
 
     try {
-      await bidService.createBid({
-        itemId: item.id,
-        sellerId: auth.user.id,
-        amount: formData.amount,
-        message: formData.message,
-        shippingOption: formData.shippingOption
-      });
+      await bidService.createBid(item.id, amount, message);
       addNotification('success', 'Bid placed successfully!');
       onBidSubmitted();
     } catch (error) {
@@ -49,8 +39,8 @@ export const BidForm: React.FC<BidFormProps> = ({ item, onBidSubmitted }) => {
           max={item.maxPrice}
           step="0.01"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          value={formData.amount}
-          onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
         />
       </div>
 
@@ -58,26 +48,9 @@ export const BidForm: React.FC<BidFormProps> = ({ item, onBidSubmitted }) => {
         <label className="block text-sm font-medium text-gray-700">Message (Optional)</label>
         <textarea
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          value={formData.message}
-          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Shipping Preference</label>
-        <select
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          value={formData.shippingOption}
-          onChange={(e) => setFormData({ ...formData, shippingOption: e.target.value })}
-        >
-          {item.shipping_options.map((option: ShippingOption) => (
-            <option key={option.type} value={option.type}>
-              {option.type === 'shipping' 
-                ? `Shipping (+$${option.cost})` 
-                : `Pickup (${option.location})`}
-            </option>
-          ))}
-        </select>
       </div>
 
       <button

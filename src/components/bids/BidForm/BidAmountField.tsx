@@ -1,18 +1,20 @@
 import React from 'react';
+import { BidAmountFieldProps } from './BidAmountFieldProps';
 
-interface BidAmountFieldProps {
-  amount: number;
-  onChange: (amount: number) => void;
-}
-
-export const BidAmountField: React.FC<BidAmountFieldProps> = ({ amount, onChange }) => {
+export const BidAmountField: React.FC<BidAmountFieldProps> = ({ 
+  amount, 
+  onChange,
+  minPrice,
+  maxPrice 
+}) => {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700">Your Offer</label>
       <input
         type="number"
         required
-        min="0"
+        min={minPrice}
+        max={maxPrice}
         step="0.01"
         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
         value={amount}

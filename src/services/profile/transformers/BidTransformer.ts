@@ -8,13 +8,12 @@ export class BidTransformer extends BaseTransformer<BidRow, Bid> {
   transform(data: BidRow): Bid {
     return {
       id: data.id,
-      itemId: data.item_id,
-      sellerId: data.bidder_id,
+      item_id: data.item_id,
+      bidder_id: data.bidder_id,
       amount: data.amount,
       message: data.message || '',
-      shippingOption: data.shipping_option,
       status: data.status,
-      createdAt: data.created_at
+      created_at: data.created_at
     };
   }
 }

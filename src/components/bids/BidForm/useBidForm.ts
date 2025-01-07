@@ -3,29 +3,19 @@ import { useUser } from '../../../contexts/UserContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { bidService } from '../../../services/bidService';
 import { Item } from '../../../types/item';
-import { BidFormState } from './types';
 
 export const useBidForm = (item: Item, onBidSubmitted: () => void) => {
   const { auth } = useUser();
   const { addNotification } = useNotification();
-  const [formData, setFormData] = useState<BidFormState>({
-    amount: item.minPrice,
-    message: '',
-    shippingOption: item.shipping_options[0]?.type || 'shipping'
-  });
+  const [amount, setAmount] = useState<number>(item.minPrice);
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.user) return;
 
     try {
-      await bidService.createBid({
-        itemId: item.id,
-        sellerId: auth.user.id,
-        amount: formData.amount,
-        message: formData.message,
-        shippingOption: formData.shippingOption
-      });
+      await bidService.createBid(item.id, amount, message);
       addNotification('success', 'Bid placed successfully!');
       onBidSubmitted();
     } catch (error) {
@@ -33,13 +23,11 @@ export const useBidForm = (item: Item, onBidSubmitted: () => void) => {
     }
   };
 
-  const handleChange = (field: keyof BidFormState, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   return {
-    formData,
-    handleSubmit,
-    handleChange
+    amount,
+    message,
+    setAmount,
+    setMessage,
+    handleSubmit
   };
 };

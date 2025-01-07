@@ -1,45 +1,21 @@
 import { supabase } from '../lib/supabase';
 import { Bid, BidStatus } from '../types/bid';
-import { emailService } from './emailService';
 
 export const bidService = {
-  async createBid(bid: Partial<Bid>): Promise<Bid> {
+  async createBid(itemId: string, amount: number, message?: string): Promise<Bid> {
     const { data, error } = await supabase
       .from('bids')
       .insert([{
-        ...bid,
-        status: 'pending',
-        created_at: new Date().toISOString()
+        item_id: itemId,
+        bidder_id: (await supabase.auth.getUser()).data.user?.id,
+        amount,
+        message,
+        status: 'pending' as BidStatus
       }])
-      .select()
+      .select('*, bidder:profiles(username), item:items(title)')
       .single();
 
     if (error) throw error;
-
-    // Notify seller
-    const { data: item } = await supabase
-      .from('items')
-      .select('title, seller_id')
-      .eq('id', bid.itemId)
-      .single();
-
-    if (item) {
-      const { data: seller } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', item.seller_id)
-        .single();
-
-      if (seller) {
-        await emailService.sendBidNotificationEmail(
-          seller.email,
-          item.title,
-          bid.amount!,
-          bid.itemId!
-        );
-      }
-    }
-
     return data;
   },
 
@@ -50,25 +26,27 @@ export const bidService = {
       .eq('id', bidId);
 
     if (error) throw error;
+  },
 
-    if (status === 'accepted') {
-      // Get bid details
-      const { data: bid } = await supabase
-        .from('bids')
-        .select('*, items(*), profiles(*)')
-        .eq('id', bidId)
-        .single();
+  async getBidsForItem(itemId: string): Promise<Bid[]> {
+    const { data, error } = await supabase
+      .from('bids')
+      .select('*, bidder:profiles(username), item:items(title)')
+      .eq('item_id', itemId)
+      .order('created_at', { ascending: false });
 
-      if (bid) {
-        // Send acceptance email to buyer
-        await emailService.sendBidAcceptedEmail(
-          bid.profiles.email,
-          bid.items.title,
-          bid.amount,
-          bid.items.seller_name,
-          `/payment/${bidId}`
-        );
-      }
-    }
+    if (error) throw error;
+    return data;
+  },
+
+  async getReceivedBids(sellerId: string): Promise<Bid[]> {
+    const { data, error } = await supabase
+      .from('bids')
+      .select('*, bidder:profiles(username), item:items(title)')
+      .eq('items.seller_id', sellerId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
   }
 };

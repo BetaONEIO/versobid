@@ -2,8 +2,8 @@ import { Bid } from '../types/bid';
 
 export const sortBidsByDate = (bids: Bid[]): Bid[] => {
   return [...bids].sort((a, b) => {
-    const dateA = new Date(a.createdAt);
-    const dateB = new Date(b.createdAt);
+    const dateA = new Date(a.created_at);
+    const dateB = new Date(b.created_at);
     return dateB.getTime() - dateA.getTime();
   });
 };

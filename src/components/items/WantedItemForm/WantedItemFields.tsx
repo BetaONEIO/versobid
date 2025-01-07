@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ItemFormData } from '../../../types/item';
 import { categories } from '../../../utils/constants';
-import { ItemSuggestions } from './ItemSuggestions';
+import { useEbaySearch } from '../../../hooks/useEbaySearch';
+import { ItemSuggestions } from '../ItemSuggestions';
 
 interface WantedItemFieldsProps {
   formData: ItemFormData;
@@ -10,12 +11,12 @@ interface WantedItemFieldsProps {
 
 export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, onChange }) => {
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const { loading, suggestions, searchItems } = useEbaySearch();
 
-  const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
-    const numValue = Number(value);
-    if (!isNaN(numValue)) {
-      onChange(field, numValue);
-    }
+  const handleTitleChange = (value: string) => {
+    onChange('title', value);
+    searchItems(value);
+    setShowSuggestions(true);
   };
 
   const handleSuggestionSelect = (suggestion: { title: string; price?: number }) => {
@@ -29,8 +30,6 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
     setShowSuggestions(false);
   };
 
-  const conditions = ['new', 'like-new', 'good', 'fair', 'poor'] as const;
-
   return (
     <div className="space-y-6">
       <div className="relative">
@@ -42,18 +41,16 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           type="text"
           required
           value={formData.title}
-          onChange={(e) => {
-            onChange('title', e.target.value);
-            setShowSuggestions(true);
-          }}
+          onChange={(e) => handleTitleChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           placeholder="Start typing to see suggestions..."
         />
         {showSuggestions && (
           <ItemSuggestions
-            searchTerm={formData.title}
+            suggestions={suggestions}
             onSelect={handleSuggestionSelect}
+            loading={loading}
           />
         )}
       </div>
@@ -73,24 +70,6 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
         />
       </div>
 
-      <div>
-        <label htmlFor="condition" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Minimum Condition Required
-        </label>
-        <select
-          id="condition"
-          value={formData.condition || 'good'}
-          onChange={(e) => onChange('condition', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-        >
-          {conditions.map((condition) => (
-            <option key={condition} value={condition}>
-              {condition.charAt(0).toUpperCase() + condition.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -103,7 +82,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
             min="0"
             step="0.01"
             value={formData.minPrice}
-            onChange={(e) => handlePriceChange('minPrice', e.target.value)}
+            onChange={(e) => onChange('minPrice', Number(e.target.value))}
             className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -118,7 +97,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
             min={formData.minPrice}
             step="0.01"
             value={formData.maxPrice}
-            onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
+            onChange={(e) => onChange('maxPrice', Number(e.target.value))}
             className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
