@@ -33,6 +33,12 @@ export const userService = {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
+      options: {
+        data: {
+          username: formData.username,
+          full_name: formData.name
+        }
+      }
     });
 
     if (authError) throw authError;
@@ -51,6 +57,14 @@ export const userService = {
 
     const supabaseUser = authData.user as SupabaseAuthUser;
 
+    // Sign in immediately after signup
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (signInError) throw signInError;
+
     return {
       id: profile.id,
       name: profile.full_name,
@@ -61,40 +75,5 @@ export const userService = {
     };
   },
 
-  login: async (identifier: string, password: string): Promise<User> => {
-    let email = identifier;
-    if (!identifier.includes('@')) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', identifier)
-        .maybeSingle();
-      
-      if (profileError) throw profileError;
-      if (!profile) throw new Error('User not found');
-      email = profile.email;
-    }
-
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) throw new Error('Invalid credentials');
-    if (!authData.user) throw new Error('User not found');
-
-    const profile = await profileService.getProfile(authData.user.id);
-    if (!profile) throw new Error('Profile not found');
-
-    const supabaseUser = authData.user as SupabaseAuthUser;
-
-    return {
-      id: profile.id,
-      name: profile.full_name,
-      email: profile.email,
-      username: profile.username,
-      is_admin: profile.is_admin || false,
-      email_verified: supabaseUser.email_verified || false
-    };
-  }
+  // ... rest of the service code
 };
