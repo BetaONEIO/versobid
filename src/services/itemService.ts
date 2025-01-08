@@ -10,7 +10,14 @@ interface ItemFilters {
 
 export const itemService = {
   async getItems(filters?: ItemFilters): Promise<Item[]> {
-    let query = supabase.from('items').select('*');
+    let query = supabase
+      .from('items')
+      .select(`
+        *,
+        seller:profiles!seller_id (
+          username
+        )
+      `);
 
     if (filters?.category) {
       query = query.eq('category', filters.category);
@@ -27,28 +34,50 @@ export const itemService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+
+    return data.map(item => ({
+      ...item,
+      seller_username: item.seller?.username
+    }));
   },
 
   async getItem(id: string): Promise<Item | null> {
     const { data, error } = await supabase
       .from('items')
-      .select('*')
+      .select(`
+        *,
+        seller:profiles!seller_id (
+          username
+        )
+      `)
       .eq('id', id)
       .single();
 
     if (error) throw error;
-    return data;
+    if (!data) return null;
+
+    return {
+      ...data,
+      seller_username: data.seller?.username
+    };
   },
 
   async createItem(item: Omit<Item, 'id' | 'created_at'>): Promise<Item> {
     const { data, error } = await supabase
       .from('items')
       .insert([item])
-      .select()
+      .select(`
+        *,
+        seller:profiles!seller_id (
+          username
+        )
+      `)
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      seller_username: data.seller?.username
+    };
   }
 };

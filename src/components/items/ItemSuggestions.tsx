@@ -28,7 +28,7 @@ export const ItemSuggestions: React.FC<ItemSuggestionsProps> = ({
 
   return (
     <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg">
-      <ul className="max-h-60 overflow-auto">
+      <ul className="max-h-60 overflow-auto divide-y divide-gray-200 dark:divide-gray-700">
         {suggestions.map((suggestion, index) => (
           <li
             key={index}

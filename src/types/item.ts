@@ -31,4 +31,5 @@ export interface ItemInsert extends ItemFormData {
 export interface Item extends ItemInsert {
   id: string;
   created_at: string;
+  seller_username?: string;
 }

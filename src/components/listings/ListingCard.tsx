@@ -12,7 +12,12 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     <Link to={`/listings/${listing.id}`}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow">
         <div className="p-6">
-          <h3 className="text-xl font-semibold mb-2">{listing.title}</h3>
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{listing.title}</h3>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {listing.category}
+            </span>
+          </div>
           <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
             {listing.description}
           </p>
@@ -23,9 +28,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                 {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
               </span>
             </div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {listing.category}
-            </span>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Posted by: {listing.seller_username}
+            </div>
           </div>
         </div>
       </div>
