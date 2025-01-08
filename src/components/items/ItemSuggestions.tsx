@@ -15,7 +15,9 @@ export const ItemSuggestions: React.FC<ItemSuggestionsProps> = ({
   if (loading) {
     return (
       <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg p-4">
-        Loading suggestions...
+        <div className="animate-pulse flex items-center justify-center">
+          <div className="text-gray-600 dark:text-gray-300">Loading suggestions...</div>
+        </div>
       </div>
     );
   }

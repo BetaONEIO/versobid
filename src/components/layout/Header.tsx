@@ -4,6 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import { SunIcon, MoonIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { RoleToggle } from '../ui/RoleToggle';
+import { NotificationBell } from '../ui/NotificationBell';
 import { useNotification } from '../../contexts/NotificationContext';
 import { NavLinks } from './navigation/NavLinks';
 
@@ -36,7 +37,6 @@ export const Header: React.FC = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
             {auth.isAuthenticated && (
               <NavLinks 
@@ -54,18 +54,15 @@ export const Header: React.FC = () => {
                 Sign In
               </Link>
             )}
-            {auth.isAuthenticated && (
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
-              >
-                Log Out
-              </button>
-            )}
           </div>
 
           <div className="flex items-center space-x-4">
-            {auth.isAuthenticated && <RoleToggle />}
+            {auth.isAuthenticated && (
+              <>
+                <NotificationBell />
+                <RoleToggle />
+              </>
+            )}
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -77,7 +74,15 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* Mobile menu button */}
+            {auth.isAuthenticated && (
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+              >
+                Log Out
+              </button>
+            )}
+
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -91,25 +96,16 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile menu */}
         {isMenuOpen && (
           <div className="sm:hidden">
             <div className="pt-2 pb-3 space-y-1">
               {auth.isAuthenticated && (
-                <div className="space-y-1 px-2">
-                  <NavLinks 
-                    role={role} 
-                    isAdmin={auth.user?.is_admin || false} 
-                    username={auth.user?.username}
-                    mobile={true}
-                  />
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
-                  >
-                    Log Out
-                  </button>
-                </div>
+                <NavLinks 
+                  role={role} 
+                  isAdmin={auth.user?.is_admin || false} 
+                  username={auth.user?.username}
+                  mobile={true}
+                />
               )}
               {!auth.isAuthenticated && (
                 <Link

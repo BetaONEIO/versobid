@@ -7,6 +7,20 @@ interface ItemPriceFieldsProps {
 }
 
 export const ItemPriceFields: React.FC<ItemPriceFieldsProps> = ({ formData, onChange }) => {
+  const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
+    // Remove any non-numeric characters except decimal point
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = cleanValue.split('.');
+    const sanitizedValue = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
+    
+    // Convert to number, defaulting to 0 if empty
+    const numValue = sanitizedValue ? Number(sanitizedValue) : 0;
+    
+    onChange(field, numValue);
+  };
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <div>
@@ -14,12 +28,13 @@ export const ItemPriceFields: React.FC<ItemPriceFieldsProps> = ({ formData, onCh
           Minimum Price ($)
         </label>
         <input
-          type="number"
-          min="0"
-          step="0.01"
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]*[.]?[0-9]*"
           required
-          value={formData.minPrice}
-          onChange={(e) => onChange('minPrice', Number(e.target.value))}
+          value={formData.minPrice || ''}
+          placeholder="0.00"
+          onChange={(e) => handlePriceChange('minPrice', e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
@@ -28,12 +43,14 @@ export const ItemPriceFields: React.FC<ItemPriceFieldsProps> = ({ formData, onCh
           Maximum Price ($)
         </label>
         <input
-          type="number"
-          min={formData.minPrice}
-          step="0.01"
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]*[.]?[0-9]*"
           required
-          value={formData.maxPrice}
-          onChange={(e) => onChange('maxPrice', Number(e.target.value))}
+          min={formData.minPrice}
+          value={formData.maxPrice || ''}
+          placeholder="0.00"
+          onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>

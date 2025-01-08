@@ -3,7 +3,7 @@ import { Notification, NotificationType } from '../types/notification';
 
 interface NotificationContextType {
   notifications: Notification[];
-  addNotification: (type: NotificationType, message: string, duration?: number) => void;
+  addNotification: (type: NotificationType, message: string) => void;
   removeNotification: (id: string) => void;
 }
 
@@ -12,17 +12,23 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((type: NotificationType, message: string, duration = 5000) => {
+  const addNotification = useCallback((type: NotificationType, message: string) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const notification: Notification = { id, type, message, duration };
+    const notification: Notification = {
+      id,
+      type,
+      message,
+      read: false,
+      user_id: '',
+      created_at: new Date().toISOString()
+    };
     
     setNotifications((prev) => [...prev, notification]);
 
-    if (duration > 0) {
-      setTimeout(() => {
-        removeNotification(id);
-      }, duration);
-    }
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      removeNotification(id);
+    }, 5000);
   }, []);
 
   const removeNotification = useCallback((id: string) => {

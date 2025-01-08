@@ -12,7 +12,18 @@ export const useListings = () => {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const filters = role === 'seller' ? { seller_id: auth.user?.id } : undefined;
+        let filters;
+        if (role === 'buyer') {
+          // Buyers see all active listings except their own
+          filters = { 
+            status: 'active',
+            exclude_seller: auth.user?.id 
+          };
+        } else {
+          // Sellers only see their own listings
+          filters = { seller_id: auth.user?.id };
+        }
+        
         const items = await itemService.getItems(filters);
         setListings(items);
       } catch (err) {

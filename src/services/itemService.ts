@@ -1,10 +1,11 @@
 import { supabase } from '../lib/supabase';
-import { Item, ItemFormData } from '../types/item';
+import { Item } from '../types/item';
 
 interface ItemFilters {
   category?: string;
   status?: string;
   seller_id?: string;
+  exclude_seller?: string;
 }
 
 export const itemService = {
@@ -19,6 +20,9 @@ export const itemService = {
     }
     if (filters?.seller_id) {
       query = query.eq('seller_id', filters.seller_id);
+    }
+    if (filters?.exclude_seller) {
+      query = query.neq('seller_id', filters.exclude_seller);
     }
 
     const { data, error } = await query;
@@ -37,22 +41,10 @@ export const itemService = {
     return data;
   },
 
-  async createItem(item: ItemFormData & { seller_id: string; status: string }): Promise<Item> {
-    // Map the data to match database column names
-    const mappedItem = {
-      title: item.title,
-      description: item.description,
-      min_price: item.minPrice,
-      max_price: item.maxPrice,
-      seller_id: item.seller_id,
-      category: item.category,
-      shipping_options: item.shipping_options,
-      status: item.status
-    };
-
+  async createItem(item: Omit<Item, 'id' | 'created_at'>): Promise<Item> {
     const { data, error } = await supabase
       .from('items')
-      .insert([mappedItem])
+      .insert([item])
       .select()
       .single();
 

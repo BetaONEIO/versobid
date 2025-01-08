@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ItemFormData } from '../../../types/item';
 import { categories } from '../../../utils/constants';
+import { useEbaySearch } from '../../../hooks/useEbaySearch';
+import { ItemSuggestions } from '../ItemSuggestions';
 
 interface WantedItemFieldsProps {
   formData: ItemFormData;
@@ -8,16 +10,27 @@ interface WantedItemFieldsProps {
 }
 
 export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, onChange }) => {
-  const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
-    const numValue = Number(value);
-    if (!isNaN(numValue)) {
-      onChange(field, numValue);
+  const { loading, suggestions, searchItems } = useEbaySearch();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleTitleChange = (value: string) => {
+    onChange('title', value);
+    if (value.length >= 3) {
+      searchItems(value);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSuggestionSelect = (suggestion: any) => {
+    onChange('title', suggestion.title);
+    setShowSuggestions(false);
   };
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="relative">
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           What are you looking for?
         </label>
@@ -26,12 +39,21 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           type="text"
           required
           value={formData.title}
-          onChange={(e) => onChange('title', e.target.value)}
+          onChange={(e) => handleTitleChange(e.target.value)}
+          onFocus={() => formData.title.length >= 3 && setShowSuggestions(true)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           placeholder="Describe the item you want to buy"
         />
+        {showSuggestions && (
+          <ItemSuggestions
+            suggestions={suggestions}
+            onSelect={handleSuggestionSelect}
+            loading={loading}
+          />
+        )}
       </div>
 
+      {/* Rest of the form fields */}
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Additional Details
@@ -45,39 +67,6 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           placeholder="Specify condition, brand preferences, or any other requirements"
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Minimum Price ($)
-          </label>
-          <input
-            id="minPrice"
-            type="number"
-            required
-            min="0"
-            step="0.01"
-            value={formData.minPrice}
-            onChange={(e) => handlePriceChange('minPrice', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-        <div>
-          <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Maximum Price ($)
-          </label>
-          <input
-            id="maxPrice"
-            type="number"
-            required
-            min={formData.minPrice}
-            step="0.01"
-            value={formData.maxPrice}
-            onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
       </div>
 
       <div>
