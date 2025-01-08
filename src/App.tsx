@@ -11,6 +11,7 @@ import { AddItem } from './pages/AddItem';
 import { Help } from './pages/Help';
 import { Admin } from './pages/Admin';
 import { BidsReceived } from './pages/BidsReceived';
+import { Profile } from './pages/Profile';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -33,6 +34,7 @@ const App: React.FC = () => {
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/signup" element={<SignUp />} />
                   <Route path="/help" element={<Help />} />
+                  <Route path="/profile/:username" element={<Profile />} />
                   <Route
                     path="/listings"
                     element={

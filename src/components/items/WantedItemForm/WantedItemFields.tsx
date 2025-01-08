@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ItemFormData } from '../../../types/item';
 import { categories } from '../../../utils/constants';
-import { useEbaySearch } from '../../../hooks/useEbaySearch';
-import { ItemSuggestions } from '../ItemSuggestions';
 
 interface WantedItemFieldsProps {
   formData: ItemFormData;
@@ -10,29 +8,16 @@ interface WantedItemFieldsProps {
 }
 
 export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, onChange }) => {
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const { loading, suggestions, searchItems } = useEbaySearch();
-
-  const handleTitleChange = (value: string) => {
-    onChange('title', value);
-    searchItems(value);
-    setShowSuggestions(true);
-  };
-
-  const handleSuggestionSelect = (suggestion: { title: string; price?: number }) => {
-    onChange('title', suggestion.title);
-    if (suggestion.price) {
-      const minPrice = Math.floor(suggestion.price * 0.8); // 20% below suggested price
-      const maxPrice = Math.ceil(suggestion.price * 1.2); // 20% above suggested price
-      onChange('minPrice', minPrice);
-      onChange('maxPrice', maxPrice);
+  const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
+    const numValue = Number(value);
+    if (!isNaN(numValue)) {
+      onChange(field, numValue);
     }
-    setShowSuggestions(false);
   };
 
   return (
     <div className="space-y-6">
-      <div className="relative">
+      <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           What are you looking for?
         </label>
@@ -41,18 +26,10 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           type="text"
           required
           value={formData.title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
+          onChange={(e) => onChange('title', e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-          placeholder="Start typing to see suggestions..."
+          placeholder="Describe the item you want to buy"
         />
-        {showSuggestions && (
-          <ItemSuggestions
-            suggestions={suggestions}
-            onSelect={handleSuggestionSelect}
-            loading={loading}
-          />
-        )}
       </div>
 
       <div>
@@ -66,7 +43,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           value={formData.description}
           onChange={(e) => onChange('description', e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-          placeholder="Specify any additional requirements or preferences"
+          placeholder="Specify condition, brand preferences, or any other requirements"
         />
       </div>
 
@@ -82,7 +59,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
             min="0"
             step="0.01"
             value={formData.minPrice}
-            onChange={(e) => onChange('minPrice', Number(e.target.value))}
+            onChange={(e) => handlePriceChange('minPrice', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -97,7 +74,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
             min={formData.minPrice}
             step="0.01"
             value={formData.maxPrice}
-            onChange={(e) => onChange('maxPrice', Number(e.target.value))}
+            onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           />
         </div>

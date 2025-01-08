@@ -1,76 +1,45 @@
 import { supabase } from '../lib/supabase';
-import type { Database } from '../types/supabase';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+import { Profile } from '../types/profile';
 
 export const profileService = {
-  async getProfile(userId: string): Promise<Profile | null> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  async getProfileByUsername(username: string): Promise<Profile | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('username', username)
+      .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        throw error;
-      }
-      return data;
-    } catch (error) {
-      console.error('Error in getProfile:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data;
   },
 
-  async createProfile(profile: ProfileInsert): Promise<Profile> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([profile])
-        .select()
-        .single();
+  async uploadAvatar(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
 
-      if (error) {
-        console.error('Error creating profile:', error);
-        throw error;
-      }
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
 
-      if (!data) {
-        throw new Error('Failed to create profile');
-      }
+    if (uploadError) throw uploadError;
 
-      return data;
-    } catch (error) {
-      console.error('Error in createProfile:', error);
-      throw error;
-    }
+    const { data } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   },
 
-  async updateProfile(userId: string, updates: ProfileUpdate): Promise<Profile> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId)
-        .select()
-        .single();
+  async updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
 
-      if (error) {
-        console.error('Error updating profile:', error);
-        throw error;
-      }
-
-      if (!data) {
-        throw new Error('Failed to update profile');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error in updateProfile:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data;
   }
 };

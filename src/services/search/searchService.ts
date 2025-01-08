@@ -1,38 +1,24 @@
 import { SearchResult } from './types';
-
-const EBAY_API_KEY = (import.meta.env.VITE_EBAY_API_KEY as string) || '';
-const EBAY_API_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
+import { supabase } from '../../lib/supabase';
 
 export async function searchItems(query: string): Promise<SearchResult[]> {
-  if (!EBAY_API_KEY) {
-    console.warn('eBay API key not configured');
+  if (!query || query.length < 3) {
     return [];
   }
 
   try {
-    const response = await fetch(
-      `${EBAY_API_URL}?q=${encodeURIComponent(query)}&limit=5`,
-      {
-        headers: {
-          Authorization: `Bearer ${EBAY_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const { data: items, error } = await supabase
+      .from('items')
+      .select('title, min_price')
+      .textSearch('title', query)
+      .limit(5);
 
-    if (!response.ok) {
-      throw new Error(`eBay API error: ${response.statusText}`);
-    }
+    if (error) throw error;
 
-    const data = await response.json();
-
-    return (
-      data.itemSummaries?.map((item: any) => ({
-        title: item.title,
-        imageUrl: item.image?.imageUrl,
-        price: parseFloat(item.price?.value || '0'),
-      })) || []
-    );
+    return items.map(item => ({
+      title: item.title,
+      price: item.min_price
+    }));
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     return [];

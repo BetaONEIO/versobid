@@ -5,13 +5,15 @@ import { UserRole } from '../../../types/user';
 interface NavLinksProps {
   role: UserRole;
   isAdmin: boolean;
+  username?: string;
 }
 
-export const NavLinks: React.FC<NavLinksProps> = ({ role, isAdmin }) => {
+export const NavLinks: React.FC<NavLinksProps> = ({ role, isAdmin, username }) => {
   const sellerLinks = [
     { to: '/', label: 'Home' },
     { to: '/listings', label: 'Browse Items' },
     { to: '/bids/received', label: 'Bids Received' },
+    { to: `/profile/${username}`, label: 'Profile' },
     { to: '/help', label: 'Help' },
   ];
 
@@ -20,6 +22,7 @@ export const NavLinks: React.FC<NavLinksProps> = ({ role, isAdmin }) => {
     { to: '/items/add', label: 'Post Wanted Item' },
     { to: '/listings', label: 'My Listings' },
     { to: '/bids', label: 'My Bids' },
+    { to: `/profile/${username}`, label: 'Profile' },
     { to: '/help', label: 'Help' },
   ];
 
