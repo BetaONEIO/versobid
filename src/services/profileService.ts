@@ -13,6 +13,28 @@ export const profileService = {
     return data;
   },
 
+  async getProfile(userId: string): Promise<Profile | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createProfile(profile: Partial<Profile>): Promise<Profile> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([profile])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   async uploadAvatar(file: File): Promise<string> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;

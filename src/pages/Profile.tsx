@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { profileService } from '../services/profileService';
 import { ListingGrid } from '../components/listings/ListingGrid';
 import { useListings } from '../hooks/useListings';
+import { Profile as ProfileType } from '../types/profile';
 
 export const Profile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const { auth } = useUser();
   const { addNotification } = useNotification();
-  const [isEditing, setIsEditing] = useState(false);
   const { listings } = useListings();
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [profile, setProfile] = React.useState<any>(null);
+  const [profile, setProfile] = React.useState<ProfileType | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   const isOwnProfile = auth.user?.username === username;
@@ -31,16 +30,16 @@ export const Profile: React.FC = () => {
     };
 
     fetchProfile();
-  }, [username]);
+  }, [username, addNotification]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      setAvatarFile(file);
       const avatarUrl = await profileService.uploadAvatar(file);
       await profileService.updateProfile(auth.user!.id, { avatar_url: avatarUrl });
+      setProfile((prev: ProfileType | null) => prev ? { ...prev, avatar_url: avatarUrl } : null);
       addNotification('success', 'Profile picture updated');
     } catch (error) {
       addNotification('error', 'Failed to update profile picture');

@@ -5,4 +5,5 @@ export interface Profile {
   full_name: string;
   avatar_url: string | null;
   email: string;
+  is_admin?: boolean;
 }
