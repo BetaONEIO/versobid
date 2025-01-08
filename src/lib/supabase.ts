@@ -13,10 +13,15 @@ export const supabase = createClient<Database>(
   supabaseAnonKey,
   {
     auth: {
-      persistSession: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      persistSession: false,
       autoRefreshToken: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'versobid-web'
+      }
     }
   }
 );

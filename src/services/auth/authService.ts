@@ -12,7 +12,8 @@ export const authService: AuthService = {
       password: formData.password,
       options: {
         data: {
-          username: formData.username
+          username: formData.username,
+          full_name: formData.name
         }
       }
     });
@@ -20,31 +21,36 @@ export const authService: AuthService = {
     if (authError) throw authError;
     if (!authData.user) throw new Error('Failed to create user account');
 
-    const profile = await profileService.createProfile({
-      id: authData.user.id,
-      email: formData.email,
-      username: formData.username || '',
-      full_name: formData.name || '',
-      created_at: new Date().toISOString(),
-      avatar_url: null,
-    });
-
     try {
-      await emailService.sendEmail({
-        to: formData.email,
-        subject: 'Welcome to VersoBid!',
-        templateName: 'welcome',
-        params: {
-          name: formData.name || formData.username || '',
-          confirmation_link: `${window.location.origin}/confirm-email`
-        }
+      const profile = await profileService.createProfile({
+        id: authData.user.id,
+        email: formData.email,
+        username: formData.username || '',
+        full_name: formData.name || '',
+        created_at: new Date().toISOString(),
+        avatar_url: null,
       });
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-    }
 
-    const supabaseUser = authData.user as SupabaseAuthUser;
-    return mapUserFromProfile(profile, supabaseUser);
+      try {
+        await emailService.sendEmail({
+          to: formData.email,
+          subject: 'Welcome to VersoBid!',
+          templateName: 'welcome',
+          params: {
+            name: formData.name || formData.username || '',
+            confirmation_link: `${window.location.origin}/confirm-email`
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
+
+      const supabaseUser = authData.user as SupabaseAuthUser;
+      return mapUserFromProfile(profile, supabaseUser);
+    } catch (error) {
+      await supabase.auth.signOut();
+      throw error;
+    }
   },
 
   async login(identifier: string, password: string): Promise<AuthUser> {

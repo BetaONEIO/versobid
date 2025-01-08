@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useListings } from '../hooks/useListings';
@@ -9,6 +9,19 @@ import { HowItWorks } from '../components/home/HowItWorks';
 export const Home: React.FC = () => {
   const { auth, role } = useUser();
   const { listings, loading } = useListings();
+
+  useEffect(() => {
+    console.log('Auth state:', auth);
+    console.log('User role:', role);
+  }, [auth, role]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   if (auth.isAuthenticated) {
     return (
@@ -27,7 +40,7 @@ export const Home: React.FC = () => {
                   to="/items/add"
                   className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
                 >
-                  List New Item
+                  Browse Item
                 </Link>
               ) : (
                 <Link
