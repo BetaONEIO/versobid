@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
-import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { RoleToggle } from '../ui/RoleToggle';
-import { supabase } from '../../lib/supabase';
 import { useNotification } from '../../contexts/NotificationContext';
 import { NavLinks } from './navigation/NavLinks';
 
@@ -14,16 +13,11 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { addNotification } = useNotification();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      // First call logout to clear the context
-      logout();
-      
-      // Then sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
+      await logout();
       addNotification('success', 'Successfully logged out');
       navigate('/signin');
     } catch (error) {
@@ -41,9 +35,15 @@ export const Header: React.FC = () => {
               VersoBid
             </Link>
           </div>
+
+          {/* Desktop Navigation */}
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
             {auth.isAuthenticated && (
-              <NavLinks role={role} isAdmin={auth.user?.is_admin || false} />
+              <NavLinks 
+                role={role} 
+                isAdmin={auth.user?.is_admin || false} 
+                username={auth.user?.username}
+              />
             )}
             {!auth.isAuthenticated && (
               <Link
@@ -63,6 +63,7 @@ export const Header: React.FC = () => {
               </button>
             )}
           </div>
+
           <div className="flex items-center space-x-4">
             {auth.isAuthenticated && <RoleToggle />}
             <button
@@ -75,8 +76,53 @@ export const Header: React.FC = () => {
                 <MoonIcon className="h-5 w-5" />
               )}
             </button>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              {isMenuOpen ? (
+                <XMarkIcon className="h-6 w-6" />
+              ) : (
+                <Bars3Icon className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="sm:hidden">
+            <div className="pt-2 pb-3 space-y-1">
+              {auth.isAuthenticated && (
+                <div className="space-y-1 px-2">
+                  <NavLinks 
+                    role={role} 
+                    isAdmin={auth.user?.is_admin || false} 
+                    username={auth.user?.username}
+                    mobile={true}
+                  />
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
+              {!auth.isAuthenticated && (
+                <Link
+                  to="/signin"
+                  state={{ from: location }}
+                  className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );

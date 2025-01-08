@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthFormData } from '../types';
 import { useNotification } from '../contexts/NotificationContext';
 import { userService } from '../services/userService';
+import { TermsModal } from '../components/ui/TermsModal';
+import { PrivacyModal } from '../components/ui/PrivacyModal';
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
@@ -13,10 +15,18 @@ export const SignUp: React.FC = () => {
     username: '',
     name: ''
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!acceptedTerms) {
+      addNotification('error', 'You must accept the Terms & Conditions and Privacy Policy');
+      return;
+    }
+
     try {
       await userService.signup(formData);
       addNotification('success', 'Account created successfully!');
@@ -49,6 +59,20 @@ export const SignUp: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Full Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600"
+            />
+          </div>
+
+          <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email
             </label>
@@ -77,20 +101,6 @@ export const SignUp: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Full Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600"
-            />
-          </div>
-
-          <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Password
             </label>
@@ -102,6 +112,34 @@ export const SignUp: React.FC = () => {
               onChange={(e) => handleChange('password', e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600"
             />
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="terms"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            />
+            <label htmlFor="terms" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+              I agree to the{' '}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+              >
+                Terms & Conditions
+              </button>{' '}
+              and{' '}
+              <button
+                type="button"
+                onClick={() => setShowPrivacy(true)}
+                className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+              >
+                Privacy Policy
+              </button>
+            </label>
           </div>
 
           <button
@@ -124,6 +162,9 @@ export const SignUp: React.FC = () => {
           </div>
         </form>
       </div>
+
+      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+      <PrivacyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
     </div>
   );
 };
