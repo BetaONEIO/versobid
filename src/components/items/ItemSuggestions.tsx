@@ -1,5 +1,6 @@
 import React from 'react';
 import { SearchResult } from '../../types/search';
+import { formatCurrency } from '../../utils/formatters';
 
 interface ItemSuggestionsProps {
   suggestions: SearchResult[];
@@ -35,20 +36,13 @@ export const ItemSuggestions: React.FC<ItemSuggestionsProps> = ({
             className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
             onClick={() => onSelect(suggestion)}
           >
-            {suggestion.imageUrl && (
-              <img
-                src={suggestion.imageUrl}
-                alt={suggestion.title}
-                className="w-12 h-12 object-cover rounded mr-3"
-              />
-            )}
             <div>
               <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {suggestion.title}
               </div>
-              {suggestion.price && (
+              {suggestion.price !== undefined && (
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  ${suggestion.price.toFixed(2)}
+                  {formatCurrency(suggestion.price)}
                 </div>
               )}
             </div>

@@ -28,15 +28,15 @@ export const bidService = {
     if (error) throw error;
   },
 
-  async getBidsForItem(itemId: string): Promise<Bid[]> {
+  async getBidsForItem(userId: string): Promise<Bid[]> {
     const { data, error } = await supabase
       .from('bids')
       .select('*, bidder:profiles(username), item:items(title)')
-      .eq('item_id', itemId)
+      .eq('bidder_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data || [];
   },
 
   async getReceivedBids(sellerId: string): Promise<Bid[]> {
@@ -47,6 +47,6 @@ export const bidService = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data || [];
   }
 };

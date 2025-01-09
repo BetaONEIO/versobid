@@ -10,7 +10,7 @@ export async function searchItems(query: string): Promise<SearchResult[]> {
     const { data: items, error } = await supabase
       .from('items')
       .select('title, min_price')
-      .textSearch('title', query)
+      .ilike('title', `%${query}%`)
       .limit(5);
 
     if (error) throw error;
@@ -18,7 +18,7 @@ export async function searchItems(query: string): Promise<SearchResult[]> {
     return items.map(item => ({
       title: item.title,
       price: item.min_price
-    }));
+    })) || [];
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     return [];
