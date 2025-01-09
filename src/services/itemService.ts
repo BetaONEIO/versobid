@@ -1,12 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Item } from '../types/item';
-
-interface ItemFilters {
-  category?: string;
-  status?: string;
-  seller_id?: string;
-  exclude_seller?: string;
-}
+import { Item, ItemFilters } from '../types/item';
 
 export const itemService = {
   async getItems(filters?: ItemFilters): Promise<Item[]> {
@@ -35,7 +28,7 @@ export const itemService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    return data.map(item => ({
+    return (data || []).map(item => ({
       ...item,
       seller_username: item.seller?.username
     }));
@@ -75,6 +68,8 @@ export const itemService = {
       .single();
 
     if (error) throw error;
+    if (!data) throw new Error('Failed to create item');
+
     return {
       ...data,
       seller_username: data.seller?.username

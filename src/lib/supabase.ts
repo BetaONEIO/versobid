@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Default to empty strings to prevent crashes, but log warnings
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.warn('Missing Supabase environment variables. Some features may not work correctly.');
 }
 
 export const supabase = createClient<Database>(

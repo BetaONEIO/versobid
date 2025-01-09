@@ -1,3 +1,10 @@
+export interface ItemFilters {
+  category?: string;
+  status?: string;
+  seller_id?: string;
+  exclude_seller?: string;
+}
+
 export type ShippingType = 'shipping' | 'seller-dropoff' | 'seller-pickup';
 
 export interface PickupLocation {
@@ -32,4 +39,6 @@ export interface Item extends ItemInsert {
   id: string;
   created_at: string;
   seller_username?: string;
+  archived_reason?: string;
+  archived_at?: string;
 }

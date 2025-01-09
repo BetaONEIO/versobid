@@ -15,10 +15,10 @@ export async function searchItems(query: string): Promise<SearchResult[]> {
 
     if (error) throw error;
 
-    return items.map(item => ({
+    return (items || []).map(item => ({
       title: item.title,
       price: item.min_price
-    })) || [];
+    }));
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     return [];

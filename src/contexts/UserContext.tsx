@@ -14,7 +14,6 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Export the hook separately from the provider
 export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
@@ -34,15 +33,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          const { data: profile } = await supabase
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (profile) {
+          if (error) {
+            console.error('Error fetching profile:', error);
+            setAuth({ isAuthenticated: false, user: null });
+          } else if (profile) {
             const supabaseUser = session.user as ExtendedSupabaseUser;
             setAuth({
               isAuthenticated: true,
@@ -56,14 +58,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               }
             });
           }
-        } catch (error) {
-          console.error('Error fetching profile:', error);
+        } else if (event === 'SIGNED_OUT') {
           setAuth({ isAuthenticated: false, user: null });
         }
-      } else if (event === 'SIGNED_OUT') {
+      } catch (error) {
+        console.error('Error in auth state change:', error);
         setAuth({ isAuthenticated: false, user: null });
+      } finally {
+        setIsInitialized(true);
       }
-      setIsInitialized(true);
     });
 
     return () => {
@@ -83,12 +86,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setAuth({
-      isAuthenticated: false,
-      user: null,
-    });
-    navigate('/signin');
+    try {
+      await supabase.auth.signOut();
+      setAuth({
+        isAuthenticated: false,
+        user: null,
+      });
+      navigate('/signin');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   if (!isInitialized) {
