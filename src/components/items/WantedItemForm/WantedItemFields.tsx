@@ -25,6 +25,10 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
 
   const handleSuggestionSelect = (suggestion: any) => {
     onChange('title', suggestion.title);
+    if (suggestion.price) {
+      onChange('minPrice', suggestion.price * 0.8); // Set min price to 80% of suggested price
+      onChange('maxPrice', suggestion.price * 1.2); // Set max price to 120% of suggested price
+    }
     setShowSuggestions(false);
   };
 
@@ -53,7 +57,6 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
         )}
       </div>
 
-      {/* Rest of the form fields */}
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Additional Details

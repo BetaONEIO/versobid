@@ -9,30 +9,32 @@ export const useListings = () => {
   const [error, setError] = useState<string | null>(null);
   const { role, auth } = useUser();
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        let filters;
-        if (role === 'buyer') {
-          // Buyers see all active listings except their own
-          filters = { 
-            status: 'active',
-            exclude_seller: auth.user?.id 
-          };
-        } else {
-          // Sellers only see their own listings
-          filters = { seller_id: auth.user?.id };
-        }
-        
-        const items = await itemService.getItems(filters);
-        setListings(items);
-      } catch (err) {
-        setError('Failed to fetch listings');
-      } finally {
-        setLoading(false);
+  const fetchListings = async (search?: string) => {
+    try {
+      let filters;
+      if (role === 'buyer') {
+        filters = { 
+          status: 'active',
+          exclude_seller: auth.user?.id,
+          search
+        };
+      } else {
+        filters = { 
+          seller_id: auth.user?.id,
+          search
+        };
       }
-    };
+      
+      const items = await itemService.getItems(filters);
+      setListings(items);
+    } catch (err) {
+      setError('Failed to fetch listings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (auth.isAuthenticated) {
       fetchListings();
     } else {
@@ -40,5 +42,10 @@ export const useListings = () => {
     }
   }, [role, auth.user?.id, auth.isAuthenticated]);
 
-  return { listings, loading, error };
+  const searchListings = (query: string) => {
+    setLoading(true);
+    fetchListings(query);
+  };
+
+  return { listings, loading, error, searchListings };
 };

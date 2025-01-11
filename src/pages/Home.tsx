@@ -56,7 +56,7 @@ export const Home: React.FC = () => {
           {!loading && listings.length > 0 && (
             <div className="mt-12">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                {role === 'seller' ? 'Recent Wanted Items' : 'Your Recent Listings'}
+                Browse what others are looking for
               </h2>
               <ListingGrid listings={listings.slice(0, 6)} />
             </div>

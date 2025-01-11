@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SearchResult } from '../types/search';
-import { searchItems } from '../services/search/searchService';
+import { ebayService } from '../services/ebay/ebayService';
 import { useNotification } from '../contexts/NotificationContext';
 import { debounce } from '../utils/debounce';
 
@@ -18,7 +18,7 @@ export const useEbaySearch = () => {
 
     setLoading(true);
     try {
-      const results = await searchItems(query);
+      const results = await ebayService.searchItems(query);
       setSuggestions(results);
     } catch (error) {
       console.error('Failed to fetch suggestions:', error);

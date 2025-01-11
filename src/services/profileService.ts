@@ -38,13 +38,16 @@ export const profileService = {
   async uploadAvatar(file: File): Promise<string> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error('Failed to upload avatar');
+    }
 
     const { data } = supabase.storage
       .from('avatars')

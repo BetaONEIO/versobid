@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Item, ItemFilters } from '../types/item';
 
 export const itemService = {
-  async getItems(filters?: ItemFilters): Promise<Item[]> {
+  async getItems(filters?: ItemFilters & { search?: string }): Promise<Item[]> {
     let query = supabase
       .from('items')
       .select(`
@@ -12,6 +12,9 @@ export const itemService = {
         )
       `);
 
+    if (filters?.search) {
+      query = query.ilike('title', `%${filters.search}%`);
+    }
     if (filters?.category) {
       query = query.eq('category', filters.category);
     }
@@ -34,7 +37,7 @@ export const itemService = {
     }));
   },
 
-  async getItem(id: string): Promise<Item | null> {
+  async getItem(id: string): Promise<Item> {
     const { data, error } = await supabase
       .from('items')
       .select(`
@@ -47,7 +50,7 @@ export const itemService = {
       .single();
 
     if (error) throw error;
-    if (!data) return null;
+    if (!data) throw new Error('Item not found');
 
     return {
       ...data,
@@ -59,46 +62,35 @@ export const itemService = {
     const { data, error } = await supabase
       .from('items')
       .insert([item])
-      .select(`
-        *,
-        seller:profiles!seller_id (
-          username
-        )
-      `)
+      .select()
       .single();
 
     if (error) throw error;
     if (!data) throw new Error('Failed to create item');
 
-    return {
-      ...data,
-      seller_username: data.seller?.username
-    };
+    return data;
   },
 
-  async deleteListing(itemId: string, reason: string): Promise<void> {
+  async deleteListing(id: string, reason: string): Promise<void> {
     const { error } = await supabase
       .from('items')
       .update({ 
         status: 'archived',
-        archived_reason: reason,
-        archived_at: new Date().toISOString()
+        archived_reason: reason 
       })
-      .eq('id', itemId)
-      .eq('seller_id', (await supabase.auth.getUser()).data.user?.id);
+      .eq('id', id);
 
     if (error) throw error;
   },
 
   async checkPendingBids(itemId: string): Promise<boolean> {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('bids')
-      .select('id')
+      .select('*', { count: 'exact', head: true })
       .eq('item_id', itemId)
-      .eq('status', 'pending')
-      .limit(1);
+      .eq('status', 'pending');
 
     if (error) throw error;
-    return (data?.length || 0) > 0;
+    return (count || 0) > 0;
   }
 };

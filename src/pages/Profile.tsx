@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -8,12 +8,14 @@ import { useListings } from '../hooks/useListings';
 import { Profile as ProfileType } from '../types/profile';
 
 export const Profile: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { username } = useParams<{ username: string }>();
   const { auth } = useUser();
   const { addNotification } = useNotification();
   const { listings } = useListings();
   const [profile, setProfile] = React.useState<ProfileType | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [uploading, setUploading] = React.useState(false);
 
   const isOwnProfile = auth.user?.username === username;
 
@@ -32,17 +34,27 @@ export const Profile: React.FC = () => {
     fetchProfile();
   }, [username, addNotification]);
 
+  const handleAvatarClick = () => {
+    if (isOwnProfile && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !auth.user?.id) return;
 
     try {
+      setUploading(true);
       const avatarUrl = await profileService.uploadAvatar(file);
-      await profileService.updateProfile(auth.user!.id, { avatar_url: avatarUrl });
-      setProfile((prev: ProfileType | null) => prev ? { ...prev, avatar_url: avatarUrl } : null);
-      addNotification('success', 'Profile picture updated');
+      await profileService.updateProfile(auth.user.id, { avatar_url: avatarUrl });
+      setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+      addNotification('success', 'Profile picture updated successfully');
     } catch (error) {
+      console.error('Error uploading avatar:', error);
       addNotification('error', 'Failed to update profile picture');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -71,20 +83,23 @@ export const Profile: React.FC = () => {
               <img
                 src={profile.avatar_url || '/default-avatar.png'}
                 alt={profile.username}
-                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 object-cover bg-white"
+                className={`w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 object-cover bg-white cursor-${isOwnProfile ? 'pointer' : 'default'}`}
+                onClick={handleAvatarClick}
               />
               {isOwnProfile && (
-                <label className="absolute bottom-0 right-0 cursor-pointer bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                  disabled={uploading}
+                />
+              )}
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
               )}
             </div>
           </div>
