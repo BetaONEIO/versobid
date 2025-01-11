@@ -28,6 +28,12 @@ class EbayService {
         return [];
       }
 
+      // Add error handling for the response
+      if (data.error) {
+        console.error('eBay search error:', data.error);
+        return [];
+      }
+
       return data.results || [];
     } catch (error) {
       console.error('Error fetching eBay suggestions:', error);

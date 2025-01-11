@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useUser } from '../contexts/UserContext';
 import { validateEmail, validateUsername, validatePassword } from '../utils/validation';
 
 interface FormData {
@@ -16,6 +17,7 @@ interface FormErrors {
 export const SignIn: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
+  const { auth } = useUser();
   const [formData, setFormData] = useState<FormData>({
     identifier: '',
     password: '',
@@ -24,6 +26,23 @@ export const SignIn: React.FC = () => {
     identifier: null,
     password: null,
   });
+
+  useEffect(() => {
+    // After successful login, redirect to intended route or last visited route
+    if (auth.isAuthenticated) {
+      const intendedRoute = localStorage.getItem('intendedRoute');
+      const lastRoute = localStorage.getItem('lastRoute');
+      
+      if (intendedRoute) {
+        localStorage.removeItem('intendedRoute');
+        navigate(intendedRoute);
+      } else if (lastRoute && lastRoute !== '/signin') {
+        navigate(lastRoute);
+      } else {
+        navigate('/');
+      }
+    }
+  }, [auth.isAuthenticated, navigate]);
 
   const validateIdentifier = (value: string): string | null => {
     if (value.includes('@')) {
@@ -60,7 +79,6 @@ export const SignIn: React.FC = () => {
 
     try {
       await login(formData.identifier, formData.password);
-      navigate('/');
     } catch (error) {
       // Error handling is done in useAuth hook
     }

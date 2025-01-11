@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -18,6 +18,19 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { NotificationList } from './components/ui/NotificationList';
 import { VerificationBanner } from './components/ui/VerificationBanner';
+import { useLocation } from 'react-router-dom';
+
+// Route persistence wrapper component
+const RouteHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Save current route to localStorage
+    localStorage.setItem('lastRoute', location.pathname + location.search);
+  }, [location]);
+
+  return <>{children}</>;
+};
 
 const App: React.FC = () => {
   return (
@@ -25,61 +38,63 @@ const App: React.FC = () => {
       <ThemeProvider>
         <NotificationProvider>
           <UserProvider>
-            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
-              <VerificationBanner />
-              <Header />
-              <main className="flex-grow max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/signin" element={<SignIn />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/help" element={<Help />} />
-                  <Route path="/profile/:username" element={<Profile />} />
-                  <Route
-                    path="/listings"
-                    element={
-                      <ProtectedRoute>
-                        <Listings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/listings/:id"
-                    element={
-                      <ProtectedRoute>
-                        <ListingDetail />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/items/add"
-                    element={
-                      <ProtectedRoute>
-                        <AddItem />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/bids/received"
-                    element={
-                      <ProtectedRoute>
-                        <BidsReceived />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin"
-                    element={
-                      <ProtectedRoute>
-                        <Admin />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </main>
-              <Footer />
-              <NotificationList />
-            </div>
+            <RouteHandler>
+              <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+                <VerificationBanner />
+                <Header />
+                <main className="flex-grow max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/profile/:username" element={<Profile />} />
+                    <Route
+                      path="/listings"
+                      element={
+                        <ProtectedRoute>
+                          <Listings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/listings/:id"
+                      element={
+                        <ProtectedRoute>
+                          <ListingDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/items/add"
+                      element={
+                        <ProtectedRoute>
+                          <AddItem />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bids/received"
+                      element={
+                        <ProtectedRoute>
+                          <BidsReceived />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute>
+                          <Admin />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </main>
+                <Footer />
+                <NotificationList />
+              </div>
+            </RouteHandler>
           </UserProvider>
         </NotificationProvider>
       </ThemeProvider>

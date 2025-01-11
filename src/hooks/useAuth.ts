@@ -20,7 +20,19 @@ export const useAuth = () => {
       const user = await authService.login(identifier, password);
       userLogin(user);
       addNotification('success', 'Successfully signed in!');
-      navigate('/');
+      
+      // Get intended route or last visited route
+      const intendedRoute = localStorage.getItem('intendedRoute');
+      const lastRoute = localStorage.getItem('lastRoute');
+      
+      if (intendedRoute) {
+        localStorage.removeItem('intendedRoute');
+        navigate(intendedRoute);
+      } else if (lastRoute && lastRoute !== '/signin') {
+        navigate(lastRoute);
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sign in';
       setError(message);
@@ -48,26 +60,9 @@ export const useAuth = () => {
     }
   };
 
-  const requestPasswordReset = async (email: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      await authService.requestPasswordReset(email);
-      addNotification('success', 'Password reset instructions have been sent to your email.');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to request password reset';
-      setError(message);
-      addNotification('error', message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
     login,
     signup,
-    requestPasswordReset,
     isLoading,
     error
   };

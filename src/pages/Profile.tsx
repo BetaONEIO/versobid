@@ -18,6 +18,7 @@ export const Profile: React.FC = () => {
   const [uploading, setUploading] = React.useState(false);
 
   const isOwnProfile = auth.user?.username === username;
+  const defaultAvatar = '/default-avatar.png';
 
   React.useEffect(() => {
     const fetchProfile = async () => {
@@ -81,10 +82,14 @@ export const Profile: React.FC = () => {
           <div className="absolute -bottom-16 left-8">
             <div className="relative">
               <img
-                src={profile.avatar_url || '/default-avatar.png'}
-                alt={profile.username}
+                src={profile.avatar_url || defaultAvatar}
+                alt={`${profile.username}'s avatar`}
                 className={`w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 object-cover bg-white cursor-${isOwnProfile ? 'pointer' : 'default'}`}
                 onClick={handleAvatarClick}
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.src = defaultAvatar;
+                }}
               />
               {isOwnProfile && (
                 <input

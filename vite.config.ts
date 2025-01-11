@@ -7,30 +7,36 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        }
+      }
+    }
   },
   optimizeDeps: {
     esbuildOptions: {
       target: 'es2020'
-    },
-    include: ['@supabase/supabase-js', '@supabase/postgrest-js']
+    }
   },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  worker: {
-    format: 'es'
-  },
   server: {
     headers: {
+      'Cross-Origin-Embedder-Policy': 'credentialless',
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Resource-Policy': 'cross-origin'
     },
     fs: {
       strict: false
+    },
+    watch: {
+      usePolling: true
     }
   }
 });

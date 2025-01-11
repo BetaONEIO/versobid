@@ -13,14 +13,16 @@ export const useListings = () => {
     try {
       let filters;
       if (role === 'buyer') {
+        // Buyers see their own listings
         filters = { 
-          status: 'active',
-          exclude_seller: auth.user?.id,
+          seller_id: auth.user?.id,
           search
         };
       } else {
+        // Sellers see all active listings except their own
         filters = { 
-          seller_id: auth.user?.id,
+          status: 'active',
+          exclude_seller: auth.user?.id,
           search
         };
       }
