@@ -39,11 +39,18 @@ export const bidService = {
     return data || [];
   },
 
-  async getReceivedBids(sellerId: string): Promise<Bid[]> {
+  async getReceivedBids(userId: string): Promise<Bid[]> {
     const { data, error } = await supabase
       .from('bids')
-      .select('*, bidder:profiles(username), item:items(title)')
-      .eq('items.seller_id', sellerId)
+      .select(`
+        *,
+        bidder:profiles(username),
+        item:items!inner(
+          title,
+          seller_id
+        )
+      `)
+      .eq('item.seller_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
