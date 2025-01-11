@@ -5,9 +5,6 @@ import { corsHeaders } from '../_shared/cors.ts'
 const EBAY_API_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
 const EBAY_AUTH_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
 
-const CLIENT_ID = Deno.env.get('EBAY_CLIENT_ID');
-const CLIENT_SECRET = Deno.env.get('EBAY_CLIENT_SECRET');
-
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -15,12 +12,15 @@ serve(async (req) => {
   }
 
   try {
-    // Log environment check
+    // Get environment variables
+    const CLIENT_ID = Deno.env.get('EBAY_CLIENT_ID');
+    const CLIENT_SECRET = Deno.env.get('EBAY_CLIENT_SECRET');
+
+    // Log environment check (but don't expose sensitive data)
     console.log('Environment check:', {
       hasClientId: !!CLIENT_ID,
       hasClientSecret: !!CLIENT_SECRET,
-      apiUrl: EBAY_API_URL,
-      authUrl: EBAY_AUTH_URL
+      envKeys: Object.keys(Deno.env.toObject())
     });
 
     const { query } = await req.json();
@@ -34,32 +34,44 @@ serve(async (req) => {
     }
 
     if (!CLIENT_ID || !CLIENT_SECRET) {
+      console.error('Missing eBay credentials');
       throw new Error('eBay credentials not configured');
     }
 
-    // Get OAuth token with production scope
+    // Get OAuth token
     console.log('Requesting OAuth token...');
+    const authString = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
+    console.log('Auth string length:', authString.length);
+
     const tokenResponse = await fetch(EBAY_AUTH_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)}`,
+        'Authorization': `Basic ${authString}`,
       },
-      body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
+      body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope/buy.item.feed https://api.ebay.com/oauth/api_scope/buy.marketing https://api.ebay.com/oauth/api_scope/buy.item.bulk.get'
     });
+
+    // Log token response status
+    console.log('Token response status:', tokenResponse.status);
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('OAuth error:', {
         status: tokenResponse.status,
         statusText: tokenResponse.statusText,
+        headers: Object.fromEntries(tokenResponse.headers.entries()),
         response: errorText
       });
-      throw new Error(`OAuth failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
+      throw new Error(`OAuth failed: ${tokenResponse.status} ${tokenResponse.statusText} - ${errorText}`);
     }
 
-    const { access_token } = await tokenResponse.json();
-    console.log('OAuth token obtained successfully');
+    const tokenData = await tokenResponse.json();
+    console.log('OAuth response received:', {
+      hasToken: !!tokenData.access_token,
+      expiresIn: tokenData.expires_in,
+      tokenType: tokenData.token_type
+    });
 
     // Make the search request
     const searchUrl = `${EBAY_API_URL}?q=${encodeURIComponent(query)}&limit=5`;
@@ -67,21 +79,25 @@ serve(async (req) => {
 
     const searchResponse = await fetch(searchUrl, {
       headers: {
-        'Authorization': `Bearer ${access_token}`,
+        'Authorization': `Bearer ${tokenData.access_token}`,
         'Content-Type': 'application/json',
-        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-        'X-EBAY-C-ENDUSERCTX': 'contextualLocation=country=US'
+        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_GB',
+        'X-EBAY-C-ENDUSERCTX': 'contextualLocation=country=GB'
       }
     });
+
+    // Log search response status
+    console.log('Search response status:', searchResponse.status);
 
     if (!searchResponse.ok) {
       const errorText = await searchResponse.text();
       console.error('Search error:', {
         status: searchResponse.status,
         statusText: searchResponse.statusText,
+        headers: Object.fromEntries(searchResponse.headers.entries()),
         response: errorText
       });
-      throw new Error(`Search failed: ${searchResponse.status} ${searchResponse.statusText}`);
+      throw new Error(`Search failed: ${searchResponse.status} ${searchResponse.statusText} - ${errorText}`);
     }
 
     const data = await searchResponse.json();
@@ -114,8 +130,7 @@ serve(async (req) => {
         error: error.message,
         details: {
           name: error.name,
-          message: error.message,
-          stack: error.stack
+          message: error.message
         }
       }),
       { 
