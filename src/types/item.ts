@@ -41,4 +41,8 @@ export interface Item extends ItemInsert {
   seller_username?: string;
   archived_reason?: string;
   archived_at?: string;
+  bids?: Bid[];
 }
+
+// Import the Bid type from bid.ts to avoid duplication
+import { Bid } from './bid';

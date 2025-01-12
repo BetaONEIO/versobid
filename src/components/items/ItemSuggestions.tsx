@@ -36,8 +36,21 @@ export const ItemSuggestions: React.FC<ItemSuggestionsProps> = ({
             className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
             onClick={() => onSelect(suggestion)}
           >
-            <div>
-              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {suggestion.imageUrl && (
+              <div className="flex-shrink-0 w-16 h-16 mr-4">
+                <img
+                  src={suggestion.imageUrl}
+                  alt={suggestion.title}
+                  className="w-full h-full object-contain rounded"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <div className="flex-grow min-w-0">
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 {suggestion.title}
               </div>
               {suggestion.price !== undefined && (
