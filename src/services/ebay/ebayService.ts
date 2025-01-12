@@ -1,6 +1,23 @@
 import { SearchResult } from '../../types/search';
 import { supabase } from '../../lib/supabase';
 
+export interface EbaySearchResponse {
+  results: SearchResult[];
+  priceAnalysis?: {
+    suggestedRange: {
+      minPrice: number;
+      maxPrice: number;
+      marketPrice: number;
+    };
+    confidence: string;
+    basedOn: number;
+    note: string;
+  };
+  total?: number;
+  limit?: number;
+  offset?: number;
+}
+
 class EbayService {
   private static instance: EbayService;
 
@@ -13,9 +30,9 @@ class EbayService {
     return this.instance;
   }
 
-  async searchItems(query: string): Promise<SearchResult[]> {
+  async searchItems(query: string): Promise<EbaySearchResponse> {
     if (!query || query.length < 3) {
-      return [];
+      return { results: [] };
     }
 
     try {
@@ -25,19 +42,18 @@ class EbayService {
 
       if (error) {
         console.error('Error calling eBay search function:', error);
-        return [];
+        return { results: [] };
       }
 
-      // Add error handling for the response
       if (data.error) {
         console.error('eBay search error:', data.error);
-        return [];
+        return { results: [] };
       }
 
-      return data.results || [];
+      return data;
     } catch (error) {
       console.error('Error fetching eBay suggestions:', error);
-      return [];
+      return { results: [] };
     }
   }
 }

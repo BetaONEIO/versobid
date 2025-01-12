@@ -5,6 +5,27 @@ import { corsHeaders } from '../_shared/cors.ts'
 const EBAY_API_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
 const EBAY_AUTH_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
 
+// Price range calculation function
+function calculatePriceRange(price: number) {
+  return {
+    minPrice: Math.round(price * 0.85), // 15% below market price
+    maxPrice: Math.round(price * 1.15), // 15% above market price
+    marketPrice: price
+  };
+}
+
+// Calculate average price from results
+function calculateAveragePrice(items: any[]) {
+  const prices = items
+    .map(item => item.price?.value ? parseFloat(item.price.value) : null)
+    .filter(price => price !== null);
+  
+  if (prices.length === 0) return null;
+  
+  const sum = prices.reduce((a, b) => a + b, 0);
+  return sum / prices.length;
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -12,16 +33,8 @@ serve(async (req) => {
   }
 
   try {
-    // Get environment variables
     const CLIENT_ID = Deno.env.get('EBAY_CLIENT_ID');
     const CLIENT_SECRET = Deno.env.get('EBAY_CLIENT_SECRET');
-
-    // Log environment check (but don't expose sensitive data)
-    console.log('Environment check:', {
-      hasClientId: !!CLIENT_ID,
-      hasClientSecret: !!CLIENT_SECRET,
-      envKeys: Object.keys(Deno.env.toObject())
-    });
 
     const { query } = await req.json();
     console.log('Search query:', query);
@@ -34,15 +47,11 @@ serve(async (req) => {
     }
 
     if (!CLIENT_ID || !CLIENT_SECRET) {
-      console.error('Missing eBay credentials');
       throw new Error('eBay credentials not configured');
     }
 
     // Get OAuth token
-    console.log('Requesting OAuth token...');
     const authString = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
-    console.log('Auth string length:', authString.length);
-
     const tokenResponse = await fetch(EBAY_AUTH_URL, {
       method: 'POST',
       headers: {
@@ -52,30 +61,20 @@ serve(async (req) => {
       body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope/buy.item.feed https://api.ebay.com/oauth/api_scope/buy.marketing https://api.ebay.com/oauth/api_scope/buy.item.bulk.get'
     });
 
-    // Log token response status
-    console.log('Token response status:', tokenResponse.status);
-
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('OAuth error:', {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        headers: Object.fromEntries(tokenResponse.headers.entries()),
-        response: errorText
-      });
-      throw new Error(`OAuth failed: ${tokenResponse.status} ${tokenResponse.statusText} - ${errorText}`);
+      throw new Error(`OAuth failed: ${tokenResponse.status}`);
     }
 
     const tokenData = await tokenResponse.json();
-    console.log('OAuth response received:', {
-      hasToken: !!tokenData.access_token,
-      expiresIn: tokenData.expires_in,
-      tokenType: tokenData.token_type
-    });
 
-    // Make the search request
-    const searchUrl = `${EBAY_API_URL}?q=${encodeURIComponent(query)}&limit=5`;
-    console.log('Making search request to:', searchUrl);
+    // Enhanced search request with additional fields
+    const searchUrl = `${EBAY_API_URL}?` + new URLSearchParams({
+      q: query,
+      limit: '10', // Increased to get better average
+      fieldgroups: 'EXTENDED',
+      sort: 'newlyListed',
+      filter: 'conditions:{NEW|USED}',
+    });
 
     const searchResponse = await fetch(searchUrl, {
       headers: {
@@ -86,45 +85,58 @@ serve(async (req) => {
       }
     });
 
-    // Log search response status
-    console.log('Search response status:', searchResponse.status);
-
     if (!searchResponse.ok) {
-      const errorText = await searchResponse.text();
-      console.error('Search error:', {
-        status: searchResponse.status,
-        statusText: searchResponse.statusText,
-        headers: Object.fromEntries(searchResponse.headers.entries()),
-        response: errorText
-      });
-      throw new Error(`Search failed: ${searchResponse.status} ${searchResponse.statusText} - ${errorText}`);
+      throw new Error(`Search failed: ${searchResponse.status}`);
     }
 
     const data = await searchResponse.json();
-    console.log('Search results:', {
-      total: data.total,
-      count: data.itemSummaries?.length || 0
-    });
 
+    // Calculate average price and suggested range
+    const averagePrice = calculateAveragePrice(data.itemSummaries || []);
+    const priceRange = averagePrice ? calculatePriceRange(averagePrice) : null;
+
+    // Enhanced result mapping with additional fields
     const results = data.itemSummaries?.map((item: any) => ({
       title: item.title,
       imageUrl: item.image?.imageUrl,
+      thumbnailImages: item.thumbnailImages,
+      additionalImages: item.additionalImages,
       price: item.price ? parseFloat(item.price.value) : undefined,
+      condition: item.condition,
+      itemLocation: item.itemLocation,
+      seller: {
+        username: item.seller?.username,
+        feedbackScore: item.seller?.feedbackScore,
+        feedbackPercentage: item.seller?.feedbackPercentage
+      },
+      shippingOptions: item.shippingOptions,
+      buyingOptions: item.buyingOptions,
+      itemWebUrl: item.itemWebUrl,
+      categories: item.categories,
+      shortDescription: item.shortDescription,
+      brand: item.brand,
+      mpn: item.mpn,
+      epid: item.epid
     })) || [];
 
     return new Response(
-      JSON.stringify({ results }),
+      JSON.stringify({ 
+        results,
+        total: data.total,
+        limit: data.limit,
+        offset: data.offset,
+        priceAnalysis: priceRange ? {
+          suggestedRange: priceRange,
+          confidence: 'medium',
+          basedOn: results.length,
+          note: 'Suggested price range based on current market prices (±15%)'
+        } : null
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }}
     );
 
   } catch (error) {
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      cause: error.cause
-    });
-
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,

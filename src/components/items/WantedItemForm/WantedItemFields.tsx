@@ -3,6 +3,7 @@ import { ItemFormData } from '../../../types/item';
 import { categories } from '../../../utils/constants';
 import { useEbaySearch } from '../../../hooks/useEbaySearch';
 import { ItemSuggestions } from '../ItemSuggestions';
+import { PriceSuggestion } from './PriceSuggestion';
 
 interface WantedItemFieldsProps {
   formData: ItemFormData;
@@ -10,8 +11,8 @@ interface WantedItemFieldsProps {
 }
 
 export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, onChange }) => {
-  const { loading, suggestions, searchItems } = useEbaySearch();
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const { loading, suggestions, priceAnalysis, searchItems } = useEbaySearch();
 
   const handleTitleChange = (value: string) => {
     onChange('title', value);
@@ -26,10 +27,15 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
   const handleSuggestionSelect = (suggestion: any) => {
     onChange('title', suggestion.title);
     if (suggestion.price) {
-      onChange('minPrice', suggestion.price * 0.8); // Set min price to 80% of suggested price
-      onChange('maxPrice', suggestion.price * 1.2); // Set max price to 120% of suggested price
+      onChange('minPrice', suggestion.price * 0.8);
+      onChange('maxPrice', suggestion.price * 1.2);
     }
     setShowSuggestions(false);
+  };
+
+  const handlePriceRangeAccept = (minPrice: number, maxPrice: number) => {
+    onChange('minPrice', minPrice);
+    onChange('maxPrice', maxPrice);
   };
 
   return (
@@ -44,7 +50,6 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           required
           value={formData.title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          onFocus={() => formData.title.length >= 3 && setShowSuggestions(true)}
           className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
           placeholder="Describe the item you want to buy"
         />
@@ -55,21 +60,6 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
             loading={loading}
           />
         )}
-      </div>
-
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Additional Details
-        </label>
-        <textarea
-          id="description"
-          rows={4}
-          required
-          value={formData.description}
-          onChange={(e) => onChange('description', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-          placeholder="Specify condition, brand preferences, or any other requirements"
-        />
       </div>
 
       <div>
@@ -90,6 +80,28 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
           ))}
         </select>
       </div>
+
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Additional Details
+        </label>
+        <textarea
+          id="description"
+          rows={4}
+          required
+          value={formData.description}
+          onChange={(e) => onChange('description', e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+          placeholder="Specify condition, brand preferences, or any other requirements"
+        />
+      </div>
+
+      {priceAnalysis && (
+        <PriceSuggestion
+          priceAnalysis={priceAnalysis}
+          onAcceptRange={handlePriceRangeAccept}
+        />
+      )}
     </div>
   );
 };
