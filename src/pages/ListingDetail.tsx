@@ -5,11 +5,13 @@ import { useUser } from '../contexts/UserContext';
 import { DeleteListingModal } from '../components/ui/DeleteListingModal';
 import { itemService } from '../services/itemService';
 import { useNotification } from '../contexts/NotificationContext';
+import { formatCurrency } from '../utils/formatters';
+import { BidForm } from '../components/bids/BidForm';
 
 export const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { listing, loading, error } = useListing(id!);
-  const { auth } = useUser();
+  const { auth, role } = useUser();
   const navigate = useNavigate();
   const { addNotification } = useNotification();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -46,8 +48,8 @@ export const ListingDetail: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h1 className="text-3xl font-bold">{listing.title}</h1>
+        <div className="flex justify-between items-start mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{listing.title}</h1>
           {isOwner && (
             <button
               onClick={handleDeleteClick}
@@ -59,24 +61,68 @@ export const ListingDetail: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {listing.description}
-            </p>
-            <div className="mb-4">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Category:</span>
-              <span className="ml-2 text-gray-900 dark:text-gray-100">
-                {listing.category}
-              </span>
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Description</h2>
+              <p className="text-gray-600 dark:text-gray-300">
+                {listing.description}
+              </p>
             </div>
-            {isOwner && (
-              <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-md">
-                <p className="text-yellow-800 dark:text-yellow-200">
-                  This is your listing. You cannot bid on your own items.
-                </p>
+
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Details</h2>
+              <dl className="grid grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm text-gray-500 dark:text-gray-400">Category</dt>
+                  <dd className="text-gray-900 dark:text-white">{listing.category}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-500 dark:text-gray-400">Price Range</dt>
+                  <dd className="text-gray-900 dark:text-white">
+                    {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Delivery Options</h2>
+              <div className="space-y-2">
+                {listing.shipping_options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <span className="text-gray-900 dark:text-white">
+                      {option.type === 'shipping' ? (
+                        <>Shipping (up to {formatCurrency(option.cost || 0)})</>
+                      ) : option.type === 'seller-pickup' ? (
+                        <>Collection Available</>
+                      ) : null}
+                    </span>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
+
+          {!isOwner && role === 'seller' && (
+            <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+              <h2 className="text-xl font-semibold mb-4">Place a Bid</h2>
+              <BidForm 
+                item={listing}
+                onBidSubmitted={() => {
+                  addNotification('success', 'Bid placed successfully');
+                  navigate('/bids');
+                }}
+              />
+            </div>
+          )}
+
+          {isOwner && (
+            <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
+              <p className="text-yellow-800 dark:text-yellow-200">
+                This is your listing. You cannot bid on your own items.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

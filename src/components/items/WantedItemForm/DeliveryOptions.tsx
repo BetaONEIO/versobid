@@ -1,163 +1,124 @@
-import React from 'react';
-import { ShippingOption, ShippingType, PickupLocation } from '../../../types/item';
+import React, { useState } from 'react';
+import { ShippingOption } from '../../../types/item';
 
 interface DeliveryOptionsProps {
   options: ShippingOption[];
   onChange: (options: ShippingOption[]) => void;
 }
 
-const distanceOptions = [5, 10, 15, 20, 25, 30, 50];
-
 export const DeliveryOptions: React.FC<DeliveryOptionsProps> = ({ options, onChange }) => {
-  const addOption = (type: ShippingType) => {
-    const newOption: ShippingOption = {
-      type,
-      location: type !== 'shipping' ? {
-        postcode: '',
-        town: '',
-        maxDistance: type === 'seller-pickup' ? 15 : undefined
-      } : undefined
-    };
+  const [selectedOptions, setSelectedOptions] = useState<{
+    shipping: boolean;
+    collection: boolean;
+  }>({
+    shipping: options.some(opt => opt.type === 'shipping'),
+    collection: options.some(opt => opt.type === 'seller-pickup')
+  });
+
+  const handleOptionChange = (type: 'shipping' | 'collection', checked: boolean) => {
+    setSelectedOptions(prev => ({ ...prev, [type]: checked }));
     
-    onChange([...options, newOption]);
-  };
-
-  const removeOption = (index: number) => {
-    const newOptions = options.filter((_, i) => i !== index);
-    onChange(newOptions);
-  };
-
-  const updateOption = (index: number, updates: Partial<ShippingOption>) => {
-    const newOptions = [...options];
-    newOptions[index] = { ...newOptions[index], ...updates };
-    onChange(newOptions);
-  };
-
-  const updateLocation = (index: number, field: keyof PickupLocation, value: string | number) => {
-    const newOptions = [...options];
-    if (!newOptions[index].location) {
-      newOptions[index].location = { postcode: '', town: '' };
+    let newOptions = [...options];
+    
+    if (checked) {
+      // Add the option if it doesn't exist
+      if (type === 'shipping' && !options.some(opt => opt.type === 'shipping')) {
+        newOptions.push({
+          type: 'shipping',
+          cost: 0
+        });
+      } else if (type === 'collection' && !options.some(opt => opt.type === 'seller-pickup')) {
+        newOptions.push({
+          type: 'seller-pickup',
+          location: {
+            postcode: '',
+            town: '',
+            maxDistance: 15
+          }
+        });
+      }
+    } else {
+      // Remove the option
+      newOptions = newOptions.filter(opt => 
+        type === 'shipping' ? opt.type !== 'shipping' : opt.type !== 'seller-pickup'
+      );
     }
-    newOptions[index].location = {
-      ...newOptions[index].location!,
-      [field]: value
-    };
+    
     onChange(newOptions);
   };
+
+  const updateShippingCost = (cost: number) => {
+    const newOptions = options.map(opt => 
+      opt.type === 'shipping' ? { ...opt, cost } : opt
+    );
+    onChange(newOptions);
+  };
+
+  const shippingOption = options.find(opt => opt.type === 'shipping');
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-gray-900 dark:text-white">Delivery Preferences</h3>
       
-      {options.map((option, index) => (
-        <div key={index} className="flex items-start space-x-4 p-4 border rounded-md dark:border-gray-700">
-          <div className="flex-grow space-y-4">
-            {option.type === 'shipping' ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Maximum Shipping Cost ($)
-                </label>
+      <div className="space-y-4">
+        {/* Shipping Option */}
+        <div className="flex flex-col space-y-2">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={selectedOptions.shipping}
+              onChange={(e) => handleOptionChange('shipping', e.target.checked)}
+              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Ship to me
+            </span>
+          </label>
+          
+          {selectedOptions.shipping && (
+            <div className="ml-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                I'm happy to pay up to:
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">£</span>
+                </div>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={option.cost || ''}
-                  onChange={(e) => updateOption(index, { cost: Number(e.target.value) })}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                  value={shippingOption?.cost || ''}
+                  onChange={(e) => updateShippingCost(Number(e.target.value))}
+                  className="mt-1 block w-full pl-7 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
-            ) : option.type === 'seller-dropoff' ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Your Address
-                  </label>
-                  <textarea
-                    value={option.location?.address || ''}
-                    onChange={(e) => updateLocation(index, 'address', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                    rows={3}
-                    placeholder="Enter your full address"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Postcode
-                    </label>
-                    <input
-                      type="text"
-                      value={option.location?.postcode || ''}
-                      onChange={(e) => updateLocation(index, 'postcode', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Town
-                    </label>
-                    <input
-                      type="text"
-                      value={option.location?.town || ''}
-                      onChange={(e) => updateLocation(index, 'town', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Maximum Travel Distance
-                  </label>
-                  <select
-                    value={option.location?.maxDistance || 15}
-                    onChange={(e) => updateLocation(index, 'maxDistance', Number(e.target.value))}
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                  >
-                    {distanceOptions.map(distance => (
-                      <option key={distance} value={distance}>
-                        {distance} miles
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => removeOption(index)}
-            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-          >
-            Remove
-          </button>
+            </div>
+          )}
         </div>
-      ))}
 
-      <div className="flex flex-wrap gap-4">
-        <button
-          type="button"
-          onClick={() => addOption('shipping')}
-          className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-800"
-        >
-          Add Shipping Option
-        </button>
-        <button
-          type="button"
-          onClick={() => addOption('seller-dropoff')}
-          className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-800"
-        >
-          Add Seller Drop-off
-        </button>
-        <button
-          type="button"
-          onClick={() => addOption('seller-pickup')}
-          className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-800"
-        >
-          Add Seller Pick-up
-        </button>
+        {/* Collection Option */}
+        <div className="flex flex-col space-y-2">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={selectedOptions.collection}
+              onChange={(e) => handleOptionChange('collection', e.target.checked)}
+              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Collection
+            </span>
+          </label>
+          
+          {selectedOptions.collection && (
+            <div className="ml-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                I am happy to collect the item
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
