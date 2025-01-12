@@ -1,27 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
-import { resolve } from 'path';
-import fs from 'fs';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    {
-      name: 'copy-redirects',
-      apply: 'build',
-      closeBundle() {
-        const src = resolve(__dirname, 'public/_redirects'); // Adjust path if necessary
-        const dest = resolve(__dirname, 'dist/_redirects');
-        if (fs.existsSync(src)) {
-          fs.copyFileSync(src, dest);
-          console.log('Copied _redirects file to dist folder');
-        } else {
-          console.warn('_redirects file not found in public folder');
-        }
-      }
-    }
-  ],
+  plugins: [react()],
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

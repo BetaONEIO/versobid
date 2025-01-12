@@ -1,17 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
-// Default to empty strings to prevent crashes, but log warnings
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Get environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Missing Supabase environment variables. Some features may not work correctly.');
-}
+// Log environment check (but don't expose sensitive data)
+console.log('Environment check:', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey
+});
 
+// Create Supabase client
 export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey,
+  supabaseUrl || '',  // Provide empty string as fallback
+  supabaseAnonKey || '',  // Provide empty string as fallback
   {
     auth: {
       persistSession: true,
@@ -26,3 +29,8 @@ export const supabase = createClient<Database>(
     }
   }
 );
+
+// Validate after client creation
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Missing Supabase environment variables. Some features may not work correctly.');
+}
