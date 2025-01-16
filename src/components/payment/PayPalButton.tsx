@@ -2,7 +2,7 @@ import React from 'react';
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { useNotification } from '../../contexts/NotificationContext';
 import { PaymentDetails } from '../../types/payment';
-import { paymentService } from '../../services/paymentService';
+import { paymentService } from '../../services/payment/paymentService';
 
 interface PayPalButtonProps {
   paymentDetails: PaymentDetails;

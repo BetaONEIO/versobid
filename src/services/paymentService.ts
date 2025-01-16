@@ -1,23 +1,49 @@
-import { PaymentDetails, PaymentResponse } from '../types/payment';
+import { supabase } from '../lib/supabase';
 
-class PaymentService {
-  async createPayPalOrder(paymentDetails: PaymentDetails): Promise<{ id: string }> {
-    // In a real application, this would make an API call to your backend
-    // which would then create the PayPal order
-    console.log('Creating PayPal order:', paymentDetails);
-    return { id: 'mock-order-id' };
-  }
-
-  async capturePayment(orderId: string): Promise<PaymentResponse> {
-    // In a real application, this would make an API call to your backend
-    // which would then capture the payment
-    console.log('Capturing payment:', orderId);
-    return {
-      success: true,
-      message: 'Payment captured successfully',
-      transactionId: 'mock-transaction-id'
-    };
-  }
+export interface PaymentDetails {
+  amount: number;
+  currency: string;
+  itemId: string;
+  buyerId: string;
+  sellerId: string;
+  transactionId: string;
 }
 
-export const paymentService = new PaymentService();
+export const paymentService = {
+  async recordPayment(details: PaymentDetails): Promise<void> {
+    const { error } = await supabase
+      .from('payments')
+      .insert([{
+        amount: details.amount,
+        currency: details.currency,
+        item_id: details.itemId,
+        buyer_id: details.buyerId,
+        seller_id: details.sellerId,
+        transaction_id: details.transactionId,
+        status: 'completed',
+        provider: 'paypal'
+      }]);
+
+    if (error) throw error;
+
+    // Update item status
+    await supabase
+      .from('items')
+      .update({ status: 'completed' })
+      .eq('id', details.itemId);
+
+    // Create notification for seller
+    await supabase
+      .from('notifications')
+      .insert([{
+        user_id: details.sellerId,
+        type: 'payment_received',
+        message: `Payment received for item`,
+        data: {
+          amount: details.amount,
+          currency: details.currency,
+          transaction_id: details.transactionId
+        }
+      }]);
+  }
+};

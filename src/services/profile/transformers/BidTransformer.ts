@@ -1,5 +1,5 @@
 import { BaseTransformer } from '.';
-import { Bid } from '../../../types/bid';
+import { Bid, BidStatus } from '../../../types/bid';
 import { Database } from '../../../types/supabase';
 
 type BidRow = Database['public']['Tables']['bids']['Row'];
@@ -12,7 +12,7 @@ export class BidTransformer extends BaseTransformer<BidRow, Bid> {
       bidder_id: data.bidder_id,
       amount: data.amount,
       message: data.message || '',
-      status: data.status,
+      status: data.status as BidStatus,
       created_at: data.created_at
     };
   }

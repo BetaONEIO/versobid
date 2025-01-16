@@ -1,8 +1,10 @@
 export interface PaymentDetails {
   amount: number;
   currency: string;
-  itemTitle: string;
-  orderId?: string;
+  itemId: string;
+  buyerId: string;
+  sellerId: string;
+  transactionId: string;
 }
 
 export interface PaymentStatus {

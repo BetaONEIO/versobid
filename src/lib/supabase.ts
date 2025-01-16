@@ -2,35 +2,55 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
 // Get environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Log environment check (but don't expose sensitive data)
-console.log('Environment check:', {
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseAnonKey
-});
+// Validate environment variables
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing required Supabase environment variables:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
+    env: import.meta.env.MODE
+  });
+  throw new Error('Supabase configuration missing');
+}
 
-// Create Supabase client
+// Validate URL format
+try {
+  new URL(supabaseUrl);
+} catch (error) {
+  console.error('Invalid Supabase URL format:', error);
+  throw new Error('Invalid Supabase URL format');
+}
+
+// Create Supabase client with persistent sessions
 export const supabase = createClient<Database>(
-  supabaseUrl || '',  // Provide empty string as fallback
-  supabaseAnonKey || '',  // Provide empty string as fallback
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
-      persistSession: true,
       autoRefreshToken: true,
+      persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce'
+      storage: window.localStorage,
+      storageKey: 'versobid-auth'
     },
     global: {
       headers: {
         'X-Client-Info': 'versobid-web'
       }
+    },
+    db: {
+      schema: 'public'
     }
   }
 );
 
-// Validate after client creation
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Missing Supabase environment variables. Some features may not work correctly.');
-}
+// Initialize auth state
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    console.log('User signed in:', session?.user?.email);
+  } else if (event === 'SIGNED_OUT') {
+    console.log('User signed out');
+  }
+});

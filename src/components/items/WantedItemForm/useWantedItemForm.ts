@@ -36,7 +36,7 @@ export const useWantedItemForm = () => {
     }
   };
 
-  const handleChange = (field: keyof ItemFormData, value: string | number) => {
+  const handleChange = (field: keyof ItemFormData, value: string | number | any[]) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
 

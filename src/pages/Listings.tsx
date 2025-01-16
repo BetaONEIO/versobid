@@ -3,78 +3,60 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { SearchBar } from '../components/ui/SearchBar';
 import { useListings } from '../hooks/useListings';
 import { useUser } from '../contexts/UserContext';
-import { formatCurrency, formatDate } from '../utils/formatters';
-
-type SortField = 'date' | 'price' | 'bids';
-type SortOrder = 'asc' | 'desc';
+import { formatCurrency } from '../utils/formatters';
+import { googleShoppingService } from '../services/shopping/googleShoppingService';
+import { SearchResult } from '../types/search';
 
 export const Listings: React.FC = () => {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search');
   const { listings, loading, error } = useListings();
   const { role } = useUser();
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [searchResults, setSearchResults] = useState<{
+    results: SearchResult[];
+    priceAnalysis?: any;
+  } | null>(null);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    if (searchQuery) {
-      console.log('Search query changed:', searchQuery);
-    }
+    const performSearch = async () => {
+      if (searchQuery) {
+        setSearching(true);
+        try {
+          const results = await googleShoppingService.searchProducts(searchQuery);
+          setSearchResults(results);
+        } catch (err) {
+          console.error('Search error:', err);
+        } finally {
+          setSearching(false);
+        }
+      } else {
+        setSearchResults(null);
+      }
+    };
+
+    performSearch();
   }, [searchQuery]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (role === 'buyer' && listings.length === 0) {
+  if (loading || searching) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-            No Items Listed Yet
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Start by listing an item you're looking to buy. Sellers will be able to see your listing and make offers.
-          </p>
-          <Link
-            to="/items/add"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            List an Item
-          </Link>
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
         </div>
       </div>
     );
   }
 
-  const filteredListings = listings
-    .filter(listing => statusFilter === 'all' || listing.status === statusFilter)
-    .filter(listing => categoryFilter === 'all' || listing.category === categoryFilter);
-
-  const sortedListings = [...filteredListings].sort((a, b) => {
-    switch (sortField) {
-      case 'date':
-        return sortOrder === 'desc' 
-          ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      case 'price':
-        return sortOrder === 'desc'
-          ? b.maxPrice - a.maxPrice
-          : a.maxPrice - b.maxPrice;
-      case 'bids':
-        return sortOrder === 'desc'
-          ? (b.bids?.length || 0) - (a.bids?.length || 0)
-          : (a.bids?.length || 0) - (b.bids?.length || 0);
-      default:
-        return 0;
-    }
-  });
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 dark:bg-red-900 p-4 rounded-lg">
+          <p className="text-red-600 dark:text-red-200">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -100,137 +82,104 @@ export const Listings: React.FC = () => {
         )}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap gap-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border-gray-300 dark:border-gray-600"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-            <option value="archived">Archived</option>
-          </select>
-
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-md border-gray-300 dark:border-gray-600"
-          >
-            <option value="all">All Categories</option>
-            {Array.from(new Set(listings.map(l => l.category))).map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
-          <select
-            value={`${sortField}-${sortOrder}`}
-            onChange={(e) => {
-              const [field, order] = e.target.value.split('-');
-              setSortField(field as SortField);
-              setSortOrder(order as SortOrder);
-            }}
-            className="rounded-md border-gray-300 dark:border-gray-600"
-          >
-            <option value="date-desc">Newest First</option>
-            <option value="date-asc">Oldest First</option>
-            <option value="price-desc">Highest Price</option>
-            <option value="price-asc">Lowest Price</option>
-            <option value="bids-desc">Most Bids</option>
-            <option value="bids-asc">Least Bids</option>
-          </select>
+      {/* Price Analysis */}
+      {searchResults?.priceAnalysis && (
+        <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+          <h2 className="text-lg font-semibold mb-2">Market Price Analysis</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Suggested Range:</p>
+              <p className="font-medium">
+                {formatCurrency(searchResults.priceAnalysis.suggestedRange.minPrice)} - {formatCurrency(searchResults.priceAnalysis.suggestedRange.maxPrice)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Average Market Price:</p>
+              <p className="font-medium">{formatCurrency(searchResults.priceAnalysis.suggestedRange.marketPrice)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Based on:</p>
+              <p className="font-medium">{searchResults.priceAnalysis.basedOn} similar items</p>
+            </div>
+          </div>
         </div>
+      )}
 
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Price Range
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Bids
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Posted
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {sortedListings.map((listing) => (
-              <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Link 
-                    to={`/listings/${listing.id}`}
-                    className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-900"
-                  >
-                    {listing.title}
-                  </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500 dark:text-gray-300">
+      {/* Search Results or Listings */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {searchResults ? (
+          // Show search results
+          searchResults.results.map((result, index) => (
+            <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              {result.imageUrl && (
+                <div className="h-48 bg-gray-100 dark:bg-gray-700">
+                  <img 
+                    src={result.imageUrl} 
+                    alt={result.title}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
+                {result.price && (
+                  <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {formatCurrency(result.price)}
+                  </p>
+                )}
+                {result.brand && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Brand: {result.brand}
+                  </p>
+                )}
+                {result.condition && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Condition: {result.condition}
+                  </p>
+                )}
+                {result.shortDescription && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
+                    {result.shortDescription}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          // Show user's listings
+          listings.map((listing) => (
+            <Link 
+              key={listing.id} 
+              to={`/listings/${listing.id}`}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-semibold">{listing.title}</h3>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {listing.category}
                   </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Link
-                    to={`/bids/received?item=${listing.id}`}
-                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-900"
-                  >
-                    {listing.bids?.length || 0} bids
-                  </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500 dark:text-gray-300">
-                    {formatDate(listing.created_at)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                    ${listing.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
-                      listing.status === 'completed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                      'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}`}
-                  >
-                    {listing.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex space-x-2">
-                    <Link
-                      to={`/listings/${listing.id}`}
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => {/* Handle delete */}}
-                      className="text-red-600 dark:text-red-400 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                  {listing.description}
+                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Budget:</span>
+                    <span className="ml-2 text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                      {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
+                    </span>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {listing.seller_username && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Posted by: {listing.seller_username}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );

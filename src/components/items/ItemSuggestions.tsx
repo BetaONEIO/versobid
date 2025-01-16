@@ -15,9 +15,10 @@ export const ItemSuggestions: React.FC<ItemSuggestionsProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg p-4">
-        <div className="animate-pulse flex items-center justify-center">
-          <div className="text-gray-600 dark:text-gray-300">Loading suggestions...</div>
+      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg">
+        <div className="p-4 text-center">
+          <div className="animate-spin inline-block w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mr-2"></div>
+          <span className="text-gray-600 dark:text-gray-300">Searching...</span>
         </div>
       </div>
     );
@@ -33,31 +34,38 @@ export const ItemSuggestions: React.FC<ItemSuggestionsProps> = ({
         {suggestions.map((suggestion, index) => (
           <li
             key={index}
-            className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+            className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
             onClick={() => onSelect(suggestion)}
           >
-            {suggestion.imageUrl && (
-              <div className="flex-shrink-0 w-16 h-16 mr-4">
-                <img
-                  src={suggestion.imageUrl}
-                  alt={suggestion.title}
-                  className="w-full h-full object-contain rounded"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    img.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-            <div className="flex-grow min-w-0">
-              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {suggestion.title}
-              </div>
-              {suggestion.price !== undefined && (
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {formatCurrency(suggestion.price)}
+            <div className="flex items-start space-x-4">
+              {suggestion.imageUrl && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={suggestion.imageUrl}
+                    alt={suggestion.title}
+                    className="w-16 h-16 object-contain rounded bg-white"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.style.display = 'none';
+                    }}
+                  />
                 </div>
               )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
+                  {suggestion.title}
+                </p>
+                {suggestion.price !== undefined && (
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {formatCurrency(suggestion.price)}
+                  </p>
+                )}
+                {suggestion.condition && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Condition: {suggestion.condition}
+                  </p>
+                )}
+              </div>
             </div>
           </li>
         ))}

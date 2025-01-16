@@ -23,18 +23,6 @@ export const adminService = {
     if (error) throw error;
   },
 
-  async updateUser(userId: string, updates: Partial<User>): Promise<void> {
-    const { error } = await supabase
-      .rpc('manage_user', {
-        admin_id: (await supabase.auth.getUser()).data.user?.id,
-        target_user_id: userId,
-        action: 'update',
-        updates
-      });
-
-    if (error) throw error;
-  },
-
   async setAdminStatus(userId: string, isAdmin: boolean): Promise<void> {
     const { error } = await supabase
       .rpc('manage_admin_status', {

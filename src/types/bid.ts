@@ -5,6 +5,7 @@ export interface Bid {
   item_id: string;
   bidder_id: string;
   amount: number;
+  counter_amount?: number;
   message?: string;
   status: BidStatus;
   created_at: string;

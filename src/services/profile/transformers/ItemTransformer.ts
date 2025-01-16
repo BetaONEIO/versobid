@@ -15,7 +15,7 @@ export class ItemTransformer extends BaseTransformer<ItemRow, Item> {
       seller_id: data.seller_id,
       category: data.category,
       shipping_options: data.shipping_options,
-      status: data.status,
+      status: data.status as 'active' | 'completed' | 'archived',
       created_at: data.created_at
     };
   }

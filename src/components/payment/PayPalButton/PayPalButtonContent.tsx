@@ -1,7 +1,7 @@
 import React from 'react';
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { paymentService } from '../../../services/paymentService';
+import { paymentService } from '../../../services/payment/paymentService';
 import { PayPalButtonProps } from './types';
 
 export const PayPalButtonContent: React.FC<PayPalButtonProps> = ({

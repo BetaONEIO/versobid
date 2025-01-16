@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { Home } from './pages/Home';
@@ -12,24 +13,26 @@ import { Help } from './pages/Help';
 import { Admin } from './pages/Admin';
 import { BidsReceived } from './pages/BidsReceived';
 import { Profile } from './pages/Profile';
+import { PaymentSuccess } from './pages/PaymentSuccess';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { NotificationList } from './components/ui/NotificationList';
 import { VerificationBanner } from './components/ui/VerificationBanner';
-import { useLocation } from 'react-router-dom';
 
-// Route persistence wrapper component
-const RouteHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const location = useLocation();
+// Get PayPal client ID from environment variables
+const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
-  useEffect(() => {
-    // Save current route to localStorage
-    localStorage.setItem('lastRoute', location.pathname + location.search);
-  }, [location]);
+if (!paypalClientId) {
+  console.warn('PayPal Client ID not found in environment variables');
+}
 
-  return <>{children}</>;
+// PayPal configuration
+const paypalOptions = {
+  clientId: paypalClientId || 'test',
+  currency: 'GBP',
+  intent: 'capture'
 };
 
 const App: React.FC = () => {
@@ -38,7 +41,7 @@ const App: React.FC = () => {
       <ThemeProvider>
         <NotificationProvider>
           <UserProvider>
-            <RouteHandler>
+            <PayPalScriptProvider options={paypalOptions}>
               <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
                 <VerificationBanner />
                 <Header />
@@ -49,6 +52,7 @@ const App: React.FC = () => {
                     <Route path="/signup" element={<SignUp />} />
                     <Route path="/help" element={<Help />} />
                     <Route path="/profile/:username" element={<Profile />} />
+                    <Route path="/payment/success" element={<PaymentSuccess />} />
                     <Route
                       path="/listings"
                       element={
@@ -94,7 +98,7 @@ const App: React.FC = () => {
                 <Footer />
                 <NotificationList />
               </div>
-            </RouteHandler>
+            </PayPalScriptProvider>
           </UserProvider>
         </NotificationProvider>
       </ThemeProvider>

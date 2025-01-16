@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../contexts/UserContext';
 import { useWantedItemForm } from './useWantedItemForm';
 import { WantedItemFields } from './WantedItemFields';
+import { PriceRangeFields } from './PriceRangeFields';
 import { DeliveryOptions } from './DeliveryOptions';
 
 export const WantedItemForm: React.FC = () => {
@@ -19,7 +20,22 @@ export const WantedItemForm: React.FC = () => {
     <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Post a Wanted Item</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <WantedItemFields formData={formData} onChange={handleChange} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <WantedItemFields 
+              formData={formData} 
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <PriceRangeFields
+              minPrice={formData.minPrice}
+              maxPrice={formData.maxPrice}
+              onChange={(field, value) => handleChange(field, value)}
+            />
+          </div>
+        </div>
+
         <DeliveryOptions 
           options={formData.shipping_options} 
           onChange={handleDeliveryChange} 
@@ -44,5 +60,3 @@ export const WantedItemForm: React.FC = () => {
     </div>
   );
 };
-
-export default WantedItemForm;

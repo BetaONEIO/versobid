@@ -5,13 +5,12 @@ import { useUser } from '../contexts/UserContext';
 import { DeleteListingModal } from '../components/ui/DeleteListingModal';
 import { itemService } from '../services/itemService';
 import { useNotification } from '../contexts/NotificationContext';
-import { formatCurrency } from '../utils/formatters';
 import { BidForm } from '../components/bids/BidForm';
 
 export const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { listing, loading, error } = useListing(id!);
-  const { auth, role } = useUser();
+  const { auth } = useUser();
   const navigate = useNavigate();
   const { addNotification } = useNotification();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,7 +58,7 @@ export const ListingDetail: React.FC = () => {
             </button>
           )}
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             <div>
@@ -79,31 +78,14 @@ export const ListingDetail: React.FC = () => {
                 <div>
                   <dt className="text-sm text-gray-500 dark:text-gray-400">Price Range</dt>
                   <dd className="text-gray-900 dark:text-white">
-                    {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
+                    £{listing.minPrice} - £{listing.maxPrice}
                   </dd>
                 </div>
               </dl>
             </div>
-
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Delivery Options</h2>
-              <div className="space-y-2">
-                {listing.shipping_options.map((option, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <span className="text-gray-900 dark:text-white">
-                      {option.type === 'shipping' ? (
-                        <>Shipping (up to {formatCurrency(option.cost || 0)})</>
-                      ) : option.type === 'seller-pickup' ? (
-                        <>Collection Available</>
-                      ) : null}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {!isOwner && role === 'seller' && (
+          {!isOwner && (
             <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
               <h2 className="text-xl font-semibold mb-4">Place a Bid</h2>
               <BidForm 
@@ -113,14 +95,6 @@ export const ListingDetail: React.FC = () => {
                   navigate('/bids');
                 }}
               />
-            </div>
-          )}
-
-          {isOwner && (
-            <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
-              <p className="text-yellow-800 dark:text-yellow-200">
-                This is your listing. You cannot bid on your own items.
-              </p>
             </div>
           )}
         </div>

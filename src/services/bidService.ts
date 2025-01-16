@@ -19,10 +19,15 @@ export const bidService = {
     return data;
   },
 
-  async updateBidStatus(bidId: string, status: BidStatus): Promise<void> {
+  async updateBidStatus(bidId: string, status: BidStatus, counterOffer?: number): Promise<void> {
+    const updates: any = { status };
+    if (counterOffer !== undefined) {
+      updates.counter_amount = counterOffer;
+    }
+
     const { error } = await supabase
       .from('bids')
-      .update({ status })
+      .update(updates)
       .eq('id', bidId);
 
     if (error) throw error;
@@ -55,5 +60,15 @@ export const bidService = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  async respondToCounter(bidId: string, accept: boolean): Promise<void> {
+    const status = accept ? 'accepted' : 'rejected';
+    const { error } = await supabase
+      .from('bids')
+      .update({ status })
+      .eq('id', bidId);
+
+    if (error) throw error;
   }
 };

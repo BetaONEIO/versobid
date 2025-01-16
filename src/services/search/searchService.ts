@@ -1,5 +1,5 @@
 import { SearchResult } from './types';
-import { supabase } from '../../lib/supabase';
+import { mockProducts } from '../shopping/mockData';
 
 export async function searchItems(query: string): Promise<SearchResult[]> {
   if (!query || query.length < 3) {
@@ -7,18 +7,23 @@ export async function searchItems(query: string): Promise<SearchResult[]> {
   }
 
   try {
-    const { data: items, error } = await supabase
-      .from('items')
-      .select('title, min_price')
-      .ilike('title', `%${query}%`)
-      .limit(5);
+    // Filter mock data based on search query
+    const results = mockProducts
+      .filter(product => 
+        product.title.toLowerCase().includes(query.toLowerCase()) ||
+        product.description.toLowerCase().includes(query.toLowerCase()) ||
+        product.brand.toLowerCase().includes(query.toLowerCase())
+      )
+      .map(product => ({
+        title: product.title,
+        imageUrl: product.imageUrl,
+        price: product.price,
+        condition: product.condition,
+        brand: product.brand,
+        shortDescription: product.description
+      }));
 
-    if (error) throw error;
-
-    return (items || []).map(item => ({
-      title: item.title,
-      price: item.min_price
-    }));
+    return results;
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     return [];

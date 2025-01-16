@@ -20,23 +20,10 @@ export const useAuth = () => {
       const user = await authService.login(identifier, password);
       userLogin(user);
       addNotification('success', 'Successfully signed in!');
-      
-      // Get intended route or last visited route
-      const intendedRoute = localStorage.getItem('intendedRoute');
-      const lastRoute = localStorage.getItem('lastRoute');
-      
-      if (intendedRoute) {
-        localStorage.removeItem('intendedRoute');
-        navigate(intendedRoute);
-      } else if (lastRoute && lastRoute !== '/signin') {
-        navigate(lastRoute);
-      } else {
-        navigate('/');
-      }
+      navigate('/');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to sign in';
-      setError(message);
-      addNotification('error', message);
+      setError('Invalid credentials');
+      addNotification('error', 'Invalid credentials');
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +36,7 @@ export const useAuth = () => {
     try {
       const user = await authService.signup(formData);
       userLogin(user);
-      addNotification('success', 'Account created successfully! Welcome to VersoBid.');
+      addNotification('success', 'Account created successfully!');
       navigate('/');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create account';

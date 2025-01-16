@@ -20,7 +20,7 @@ export const UserManagement: React.FC<{ users: User[] }> = ({ users }) => {
   const handleToggleAdmin = async (userId: string, currentStatus: boolean) => {
     try {
       await adminService.setAdminStatus(userId, !currentStatus);
-      addNotification('success', `User admin status updated`);
+      addNotification('success', `Admin status ${currentStatus ? 'removed' : 'granted'} successfully`);
     } catch (error) {
       addNotification('error', 'Failed to update admin status');
     }
@@ -38,7 +38,7 @@ export const UserManagement: React.FC<{ users: User[] }> = ({ users }) => {
               Email
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-              Admin
+              Admin Status
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
               Actions
@@ -57,13 +57,13 @@ export const UserManagement: React.FC<{ users: User[] }> = ({ users }) => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                 <button
                   onClick={() => handleToggleAdmin(user.id, user.is_admin || false)}
-                  className={`px-2 py-1 rounded ${
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
                     user.is_admin 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-400'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
-                  {user.is_admin ? 'Admin' : 'User'}
+                  {user.is_admin ? 'Admin' : 'Make Admin'}
                 </button>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">

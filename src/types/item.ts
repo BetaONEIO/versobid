@@ -1,18 +1,11 @@
-export interface ItemFilters {
-  category?: string;
-  status?: string;
-  seller_id?: string;
-  exclude_seller?: string;
-}
-
-export type ShippingType = 'shipping' | 'seller-dropoff' | 'seller-pickup';
-
+// Update the ShippingOption type to include location
 export interface PickupLocation {
   postcode: string;
   town: string;
   maxDistance?: number;
-  address?: string;
 }
+
+export type ShippingType = 'shipping' | 'seller-pickup';
 
 export interface ShippingOption {
   type: ShippingType;
@@ -28,6 +21,14 @@ export interface ItemFormData {
   category: string;
   shipping_options: ShippingOption[];
   condition?: 'new' | 'like-new' | 'good' | 'fair' | 'poor';
+}
+
+export interface ItemFilters {
+  category?: string;
+  status?: string;
+  seller_id?: string;
+  exclude_seller?: string;
+  search?: string;
 }
 
 export interface ItemInsert extends ItemFormData {

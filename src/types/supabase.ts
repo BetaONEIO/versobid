@@ -40,8 +40,7 @@ export interface Database {
           seller_id: string;
           category: string;
           shipping_options: any[];
-          condition: string | null;
-          status: 'active' | 'completed' | 'archived';
+          status: string;
           created_at: string;
         };
         Insert: {
@@ -53,8 +52,7 @@ export interface Database {
           seller_id: string;
           category: string;
           shipping_options?: any[];
-          condition?: string;
-          status?: 'active' | 'completed' | 'archived';
+          status?: string;
           created_at?: string;
         };
         Update: {
@@ -66,8 +64,7 @@ export interface Database {
           seller_id?: string;
           category?: string;
           shipping_options?: any[];
-          condition?: string;
-          status?: 'active' | 'completed' | 'archived';
+          status?: string;
           created_at?: string;
         };
       };
@@ -78,8 +75,7 @@ export interface Database {
           bidder_id: string;
           amount: number;
           message: string | null;
-          shipping_option: string;
-          status: 'pending' | 'accepted' | 'rejected' | 'countered';
+          status: string;
           created_at: string;
         };
         Insert: {
@@ -87,9 +83,8 @@ export interface Database {
           item_id: string;
           bidder_id: string;
           amount: number;
-          message?: string;
-          shipping_option: string;
-          status?: 'pending' | 'accepted' | 'rejected' | 'countered';
+          message?: string | null;
+          status?: string;
           created_at?: string;
         };
         Update: {
@@ -97,12 +92,125 @@ export interface Database {
           item_id?: string;
           bidder_id?: string;
           amount?: number;
-          message?: string;
-          shipping_option?: string;
-          status?: 'pending' | 'accepted' | 'rejected' | 'countered';
+          message?: string | null;
+          status?: string;
           created_at?: string;
         };
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          message: string;
+          read: boolean;
+          data: any;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          message: string;
+          read?: boolean;
+          data?: any;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          message?: string;
+          read?: boolean;
+          data?: any;
+          created_at?: string;
+        };
+      };
+      payments: {
+        Row: {
+          id: string;
+          amount: number;
+          currency: string;
+          item_id: string;
+          buyer_id: string;
+          seller_id: string;
+          transaction_id: string;
+          status: string;
+          provider: string;
+          shipping_deadline: string | null;
+          shipping_confirmed: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          amount: number;
+          currency: string;
+          item_id: string;
+          buyer_id: string;
+          seller_id: string;
+          transaction_id: string;
+          status?: string;
+          provider: string;
+          shipping_deadline?: string | null;
+          shipping_confirmed?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          amount?: number;
+          currency?: string;
+          item_id?: string;
+          buyer_id?: string;
+          seller_id?: string;
+          transaction_id?: string;
+          status?: string;
+          provider?: string;
+          shipping_deadline?: string | null;
+          shipping_confirmed?: boolean;
+          created_at?: string;
+        };
+      };
+      email_logs: {
+        Row: {
+          id: string;
+          recipient: string;
+          subject: string;
+          template_name: string;
+          status: string;
+          error: string | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          recipient: string;
+          subject: string;
+          template_name: string;
+          status?: string;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          recipient?: string;
+          subject?: string;
+          template_name?: string;
+          status?: string;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
     };
   };
 }

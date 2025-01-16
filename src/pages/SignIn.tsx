@@ -1,87 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useUser } from '../contexts/UserContext';
-import { validateEmail, validateUsername, validatePassword } from '../utils/validation';
-
-interface FormData {
-  identifier: string;
-  password: string;
-}
-
-interface FormErrors {
-  identifier: string | null;
-  password: string | null;
-}
 
 export const SignIn: React.FC = () => {
-  const navigate = useNavigate();
   const { login, isLoading } = useAuth();
-  const { auth } = useUser();
-  const [formData, setFormData] = useState<FormData>({
-    identifier: '',
-    password: '',
-  });
-  const [formErrors, setFormErrors] = useState<FormErrors>({
-    identifier: null,
-    password: null,
-  });
-
-  useEffect(() => {
-    // After successful login, redirect to intended route or last visited route
-    if (auth.isAuthenticated) {
-      const intendedRoute = localStorage.getItem('intendedRoute');
-      const lastRoute = localStorage.getItem('lastRoute');
-      
-      if (intendedRoute) {
-        localStorage.removeItem('intendedRoute');
-        navigate(intendedRoute);
-      } else if (lastRoute && lastRoute !== '/signin') {
-        navigate(lastRoute);
-      } else {
-        navigate('/');
-      }
-    }
-  }, [auth.isAuthenticated, navigate]);
-
-  const validateIdentifier = (value: string): string | null => {
-    if (value.includes('@')) {
-      return validateEmail(value);
-    }
-    return validateUsername(value);
-  };
-
-  const handleChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    setFormErrors(prev => ({
-      ...prev,
-      [field]: field === 'identifier' ? validateIdentifier(value) : validatePassword(value)
-    }));
-  };
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const newErrors: FormErrors = {
-      identifier: validateIdentifier(formData.identifier),
-      password: validatePassword(formData.password)
-    };
-
-    setFormErrors(newErrors);
-
-    if (Object.values(newErrors).some(error => error !== null)) {
-      return;
-    }
-
-    try {
-      await login(formData.identifier, formData.password);
-    } catch (error) {
-      // Error handling is done in useAuth hook
-    }
+    await login(identifier, password);
   };
 
   return (
@@ -95,14 +23,11 @@ export const SignIn: React.FC = () => {
             </label>
             <input
               type="text"
-              value={formData.identifier}
-              onChange={(e) => handleChange('identifier', e.target.value)}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
-            {formErrors.identifier && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.identifier}</p>
-            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -110,14 +35,11 @@ export const SignIn: React.FC = () => {
             </label>
             <input
               type="password"
-              value={formData.password}
-              onChange={(e) => handleChange('password', e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
-            {formErrors.password && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.password}</p>
-            )}
           </div>
           <button
             type="submit"
