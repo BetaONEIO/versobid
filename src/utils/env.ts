@@ -1,7 +1,8 @@
 export const validateEnv = () => {
   const required = [
     'VITE_SUPABASE_URL',
-    'VITE_SUPABASE_ANON_KEY'
+    'VITE_SUPABASE_ANON_KEY',
+    'VITE_PAYPAL_CLIENT_ID'
   ];
 
   const missing = required.filter(key => !import.meta.env[key]);

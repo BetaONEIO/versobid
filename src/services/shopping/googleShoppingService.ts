@@ -1,5 +1,5 @@
 import { SearchResult } from '../../types/search';
-import { supabase } from '../../lib/supabase';
+import { mockProducts } from './mockData';
 
 interface SearchResponse {
   results: SearchResult[];
@@ -17,11 +17,9 @@ interface SearchResponse {
 
 class GoogleShoppingService {
   private static instance: GoogleShoppingService | null = null;
-  private lastCallTime: number = 0;
-  private readonly minCallInterval = 300; // 300ms between calls
 
   private constructor() {
-    console.log('GoogleShoppingService initialized');
+    console.log('Local Shopping Service initialized');
   }
 
   public static getInstance(): GoogleShoppingService {
@@ -31,18 +29,43 @@ class GoogleShoppingService {
     return GoogleShoppingService.instance;
   }
 
-  private async rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
-    const now = Date.now();
-    const timeSinceLastCall = now - this.lastCallTime;
+  private searchMockProducts(query: string): SearchResult[] {
+    const searchTerms = query.toLowerCase().split(' ');
     
-    if (timeSinceLastCall < this.minCallInterval) {
-      await new Promise(resolve => 
-        setTimeout(resolve, this.minCallInterval - timeSinceLastCall)
-      );
-    }
+    return mockProducts
+      .filter(product => {
+        const searchText = `${product.title} ${product.brand} ${product.description} ${product.category}`.toLowerCase();
+        return searchTerms.every(term => searchText.includes(term));
+      })
+      .map(product => ({
+        title: product.title,
+        imageUrl: product.imageUrl,
+        price: product.price,
+        condition: product.condition,
+        brand: product.brand,
+        shortDescription: product.description
+      }));
+  }
+
+  private calculatePriceAnalysis(results: SearchResult[]): SearchResponse['priceAnalysis'] | undefined {
+    const prices = results
+      .map(r => r.price)
+      .filter((p): p is number => p !== undefined && !isNaN(p) && p > 0);
+
+    if (prices.length === 0) return undefined;
+
+    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
     
-    this.lastCallTime = Date.now();
-    return fetch(url, options);
+    return {
+      suggestedRange: {
+        minPrice: Math.floor(avgPrice * 0.85),
+        maxPrice: Math.ceil(avgPrice * 1.15),
+        marketPrice: Math.round(avgPrice)
+      },
+      confidence: prices.length > 3 ? 'high' : 'medium',
+      basedOn: prices.length,
+      note: 'Based on current market prices (±15%)'
+    };
   }
 
   async searchProducts(query: string): Promise<SearchResponse> {
@@ -51,34 +74,19 @@ class GoogleShoppingService {
     }
 
     try {
-      // Get the function URL from Supabase
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search`;
-      
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-      const authHeader = session ? `Bearer ${session.access_token}` : '';
+      // Add artificial delay to simulate network request
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      const response = await this.rateLimitedFetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader
-        },
-        body: JSON.stringify({ query })
-      });
+      // Search mock products
+      const results = this.searchMockProducts(query);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Search request failed: ${response.statusText}`);
-      }
+      // Calculate price analysis
+      const priceAnalysis = this.calculatePriceAnalysis(results);
 
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      return data;
+      return {
+        results,
+        ...(priceAnalysis && { priceAnalysis })
+      };
     } catch (error) {
       console.error('Error searching products:', error);
       throw error instanceof Error ? error : new Error('Failed to search products');

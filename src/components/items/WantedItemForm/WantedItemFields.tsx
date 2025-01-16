@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ItemFormData } from '../../../types/item';
 import { categories } from '../../../utils/constants';
 import { googleShoppingService } from '../../../services/shopping/googleShoppingService';
 import { SearchResult } from '../../../types/search';
+import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import { useUser } from '../../../contexts/UserContext';
+import { useNotification } from '../../../contexts/NotificationContext';
+import { storageService } from '../../../services/storage/storageService';
 
 interface WantedItemFieldsProps {
   formData: ItemFormData;
@@ -10,10 +14,17 @@ interface WantedItemFieldsProps {
 }
 
 export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, onChange }) => {
+  const { auth } = useUser();
+  const { addNotification } = useNotification();
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [priceAnalysis, setPriceAnalysis] = useState<any>(null);
+  const [searchAttempted, setSearchAttempted] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   const handleTitleChange = async (value: string) => {
     onChange('title', value);
@@ -24,6 +35,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
         setSuggestions(results.results || []);
         setPriceAnalysis(results.priceAnalysis);
         setShowSuggestions(true);
+        setSearchAttempted(true);
       } catch (error) {
         console.error('Search error:', error);
       } finally {
@@ -31,6 +43,7 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
       }
     } else {
       setShowSuggestions(false);
+      setSearchAttempted(false);
     }
   };
 
@@ -45,6 +58,31 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
       onChange('description', suggestion.shortDescription);
     }
     setShowSuggestions(false);
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !auth.user?.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addNotification('error', 'Image size must be less than 5MB');
+      return;
+    }
+
+    setSelectedImage(file);
+    setUploadingImage(true);
+
+    try {
+      const url = await storageService.uploadImage(file, auth.user.id);
+      setImageUrl(url);
+      onChange('image_url', url);
+      addNotification('success', 'Image uploaded successfully');
+    } catch (error) {
+      addNotification('error', 'Failed to upload image');
+      setSelectedImage(null);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   return (
@@ -67,6 +105,17 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
             <div className="animate-spin h-5 w-5 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
           </div>
         )}
+        
+        {/* No Results Message */}
+        {searchAttempted && !loading && suggestions.length === 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg p-4">
+            <p className="text-gray-600 dark:text-gray-300 text-center">
+              Sorry, we can't find that item, but you can still post it!
+            </p>
+          </div>
+        )}
+
+        {/* Search Results */}
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg">
             <ul className="max-h-60 overflow-auto divide-y divide-gray-200 dark:divide-gray-700">
@@ -109,6 +158,52 @@ export const WantedItemFields: React.FC<WantedItemFieldsProps> = ({ formData, on
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Image Upload Section */}
+      <div className="mt-4">
+        <div className="flex items-center space-x-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Upload an Image
+          </label>
+          <div className="relative group">
+            <QuestionMarkCircleIcon className="h-5 w-5 text-gray-400 hover:text-gray-500 cursor-help" />
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              If you have an image of the item you're looking for, it may help our sellers identify it
+            </div>
+          </div>
+        </div>
+        <div className="mt-1 flex items-center space-x-4">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImage}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          >
+            {uploadingImage ? 'Uploading...' : 'Choose Image'}
+          </button>
+          {selectedImage && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {selectedImage.name}
+            </span>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+        </div>
+        {imageUrl && (
+          <div className="mt-2">
+            <img
+              src={imageUrl}
+              alt="Uploaded preview"
+              className="h-32 w-32 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
+            />
           </div>
         )}
       </div>

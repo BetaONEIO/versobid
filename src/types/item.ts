@@ -1,4 +1,4 @@
-// Update the ShippingOption type to include location
+// Shipping and location types
 export interface PickupLocation {
   postcode: string;
   town: string;
@@ -13,6 +13,7 @@ export interface ShippingOption {
   location?: PickupLocation;
 }
 
+// Form data interface
 export interface ItemFormData {
   title: string;
   description: string;
@@ -21,8 +22,10 @@ export interface ItemFormData {
   category: string;
   shipping_options: ShippingOption[];
   condition?: 'new' | 'like-new' | 'good' | 'fair' | 'poor';
+  image_url?: string;
 }
 
+// Item filters interface
 export interface ItemFilters {
   category?: string;
   status?: string;
@@ -31,19 +34,14 @@ export interface ItemFilters {
   search?: string;
 }
 
-export interface ItemInsert extends ItemFormData {
-  seller_id: string;
-  status?: 'active' | 'completed' | 'archived';
-}
-
-export interface Item extends ItemInsert {
+// Main item interface
+export interface Item extends Omit<ItemFormData, 'shipping_options'> {
   id: string;
+  seller_id: string;
+  shipping_options: ShippingOption[];
+  status: 'active' | 'completed' | 'archived';
   created_at: string;
   seller_username?: string;
   archived_reason?: string;
   archived_at?: string;
-  bids?: Bid[];
 }
-
-// Import the Bid type from bid.ts to avoid duplication
-import { Bid } from './bid';
