@@ -51,20 +51,25 @@ class GoogleShoppingService {
     }
 
     try {
-      const { data: { publicUrl } } = supabase.storage.from('functions').getPublicUrl('search');
-      const functionUrl = publicUrl.replace('/storage/v1/object/public/functions/', '/functions/v1/');
+      // Get the function URL from Supabase
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search`;
+      
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeader = session ? `Bearer ${session.access_token}` : '';
 
       const response = await this.rateLimitedFetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession()}`
+          'Authorization': authHeader
         },
         body: JSON.stringify({ query })
       });
 
       if (!response.ok) {
-        throw new Error(`Search request failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Search request failed: ${response.statusText}`);
       }
 
       const data = await response.json();
