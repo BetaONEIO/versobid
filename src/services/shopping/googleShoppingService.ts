@@ -1,4 +1,5 @@
 import { SearchResult } from '../../types/search';
+import { supabase } from '../../lib/supabase';
 
 interface SearchResponse {
   results: SearchResult[];
@@ -16,16 +17,11 @@ interface SearchResponse {
 
 class GoogleShoppingService {
   private static instance: GoogleShoppingService | null = null;
-  private readonly apiKey: string;
-  private readonly apiEndpoint = 'https://serpapi.com/search.json';
   private lastCallTime: number = 0;
-  private readonly minCallInterval = 1000; // Minimum 1 second between calls
+  private readonly minCallInterval = 300; // 300ms between calls
 
   private constructor() {
-    this.apiKey = import.meta.env.VITE_SERPAPI_KEY;
-    if (!this.apiKey) {
-      console.error('VITE_SERPAPI_KEY environment variable is missing');
-    }
+    console.log('GoogleShoppingService initialized');
   }
 
   public static getInstance(): GoogleShoppingService {
@@ -35,13 +31,7 @@ class GoogleShoppingService {
     return GoogleShoppingService.instance;
   }
 
-  private validateApiKey() {
-    if (!this.apiKey) {
-      throw new Error('SERPAPI key not configured. Please check your environment variables.');
-    }
-  }
-
-  private async rateLimitedFetch(url: string): Promise<Response> {
+  private async rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
     const now = Date.now();
     const timeSinceLastCall = now - this.lastCallTime;
     
@@ -52,7 +42,7 @@ class GoogleShoppingService {
     }
     
     this.lastCallTime = Date.now();
-    return fetch(url);
+    return fetch(url, options);
   }
 
   async searchProducts(query: string): Promise<SearchResponse> {
@@ -61,70 +51,33 @@ class GoogleShoppingService {
     }
 
     try {
-      this.validateApiKey();
+      const { data: { publicUrl } } = supabase.storage.from('functions').getPublicUrl('search');
+      const functionUrl = publicUrl.replace('/storage/v1/object/public/functions/', '/functions/v1/');
 
-      const params = new URLSearchParams({
-        api_key: this.apiKey,
-        engine: 'google_shopping',
-        q: query,
-        country: 'uk',
-        currency: 'GBP',
-        gl: 'uk',
-        hl: 'en'
+      const response = await this.rateLimitedFetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession()}`
+        },
+        body: JSON.stringify({ query })
       });
 
-      const response = await this.rateLimitedFetch(`${this.apiEndpoint}?${params}`);
-      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to fetch search results');
+        throw new Error(`Search request failed: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      const results: SearchResult[] = data.shopping_results?.map((item: any) => ({
-        title: item.title,
-        imageUrl: item.thumbnail,
-        price: parseFloat(item.price.replace(/[^0-9.]/g, '')),
-        condition: item.condition || 'New',
-        brand: item.brand || undefined,
-        shortDescription: item.snippet,
-        categories: item.categories?.map((cat: string) => ({
-          categoryId: cat.toLowerCase(),
-          categoryName: cat
-        }))
-      })) || [];
 
-      const priceAnalysis = this.analyzePrices(results);
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-      return {
-        results,
-        ...(priceAnalysis && { priceAnalysis })
-      };
+      return data;
     } catch (error) {
       console.error('Error searching products:', error);
       throw error instanceof Error ? error : new Error('Failed to search products');
     }
-  }
-
-  private analyzePrices(results: SearchResult[]): SearchResponse['priceAnalysis'] | undefined {
-    if (results.length === 0) return undefined;
-
-    const prices = results.map(r => r.price).filter((p): p is number => p !== undefined);
-    if (prices.length === 0) return undefined;
-
-    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-    
-    return {
-      suggestedRange: {
-        minPrice: Math.floor(avgPrice * 0.85),
-        maxPrice: Math.ceil(avgPrice * 1.15),
-        marketPrice: Math.round(avgPrice)
-      },
-      confidence: prices.length > 3 ? 'high' : 'medium',
-      basedOn: prices.length,
-      note: 'Based on current market prices (±15%)'
-    };
   }
 }
 
