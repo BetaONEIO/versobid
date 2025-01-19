@@ -5,6 +5,8 @@ import { useNotification } from '../contexts/NotificationContext';
 import { supabase } from '../lib/supabase';
 import { TermsModal } from '../components/ui/TermsModal';
 import { PrivacyModal } from '../components/ui/PrivacyModal';
+import { PasswordStrengthIndicator } from '../components/auth/PasswordStrengthIndicator';
+import { validatePassword, validateEmail, validateUsername } from '../utils/validation';
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
@@ -19,71 +21,85 @@ export const SignUp: React.FC = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const validateForm = () => {
+    setError(null);
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      addNotification('error', emailError);
+      return false;
+    }
+
+    const usernameError = validateUsername(formData.username);
+    if (usernameError) {
+      addNotification('error', usernameError);
+      return false;
+    }
+
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      addNotification('error', passwordError);
+      return false;
+    }
+
+    if (!acceptedTerms) {
+      addNotification('error', 'You must accept the Terms & Conditions and Privacy Policy');
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!acceptedTerms) {
-      addNotification('error', 'You must accept the Terms & Conditions and Privacy Policy');
-      return;
-    }
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-
-      // Check if email already exists
+      // First check if email or username exists
       const { data: existingUser, error: checkError } = await supabase
         .from('profiles')
-        .select('email')
-        .eq('email', formData.email)
-        .maybeSingle();
+        .select('email, username')
+        .or(`email.eq.${formData.email},username.eq.${formData.username}`)
+        .single();
 
-      if (checkError) {
-        throw checkError;
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing user:', checkError);
+        throw new Error(`Failed to check existing user: ${checkError.message}`);
       }
 
-      if (existingUser) {
-        addNotification('info', 'This email is already registered. Redirecting to sign in...');
-        setTimeout(() => {
-          navigate('/signin', { state: { email: formData.email } });
-        }, 2000);
-        return;
+      if (existingUser?.email === formData.email) {
+        throw new Error('This email is already registered');
       }
 
-      // Sign up with Supabase Auth with retry logic
-      let signUpAttempts = 0;
-      const maxAttempts = 3;
-      let authData;
-      let signUpError;
+      if (existingUser?.username === formData.username) {
+        throw new Error('This username is already taken');
+      }
 
-      while (signUpAttempts < maxAttempts) {
-        try {
-          const result = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
-            options: {
-              data: {
-                username: formData.username,
-                full_name: formData.name
-              },
-              emailRedirectTo: `${window.location.origin}/auth/callback`
-            }
-          });
-
-          if (result.error) throw result.error;
-          authData = result.data;
-          break;
-        } catch (error) {
-          signUpError = error;
-          signUpAttempts++;
-          if (signUpAttempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * signUpAttempts));
-          }
+      // Create auth user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            username: formData.username,
+            full_name: formData.name
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
+      });
+
+      if (signUpError) {
+        console.error('Auth signup error:', signUpError);
+        throw signUpError;
       }
 
-      if (signUpError || !authData?.user) {
-        throw signUpError || new Error('Failed to create user account');
+      if (!authData.user) {
+        throw new Error('Failed to create user account');
       }
 
       // Create profile
@@ -95,30 +111,26 @@ export const SignUp: React.FC = () => {
           username: formData.username,
           full_name: formData.name,
           created_at: new Date().toISOString(),
-          avatar_url: null,
           is_admin: false
         }]);
 
       if (profileError) {
-        throw profileError;
+        console.error('Profile creation error:', profileError);
+        // Clean up auth user if profile creation fails
+        await supabase.auth.signOut();
+        throw new Error(`Failed to create profile: ${profileError.message}`);
       }
 
       addNotification('success', 'Account created successfully! Please check your email to verify your account.');
       navigate('/signin');
-      
     } catch (error) {
       console.error('Signup error:', error);
-      addNotification('error', error instanceof Error ? error.message : 'Failed to create account');
+      const message = error instanceof Error ? error.message : 'Failed to create account';
+      setError(message);
+      addNotification('error', message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (field: keyof AuthFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   return (
@@ -126,6 +138,11 @@ export const SignUp: React.FC = () => {
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-md">
+              {error}
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -138,21 +155,7 @@ export const SignUp: React.FC = () => {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => handleChange('email', e.target.value)}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -166,7 +169,21 @@ export const SignUp: React.FC = () => {
               type="text"
               required
               value={formData.username}
-              onChange={(e) => handleChange('username', e.target.value)}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -180,9 +197,13 @@ export const SignUp: React.FC = () => {
               type="password"
               required
               value={formData.password}
-              onChange={(e) => handleChange('password', e.target.value)}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onFocus={() => setPasswordTouched(true)}
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
             />
+            {passwordTouched && (
+              <PasswordStrengthIndicator password={formData.password} />
+            )}
           </div>
 
           <div className="flex items-center">

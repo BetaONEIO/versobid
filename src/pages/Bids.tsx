@@ -23,10 +23,6 @@ export const Bids: React.FC = () => {
     );
   }
 
-  const emptyMessage = role === 'seller' 
-    ? "You have not placed any bids"
-    : "You have received no bids";
-
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
@@ -35,9 +31,16 @@ export const Bids: React.FC = () => {
       
       {bids.length === 0 ? (
         <div className="flex justify-center items-center min-h-[30vh] bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-          <p className="text-lg text-gray-600 dark:text-gray-300">
-            {emptyMessage}
-          </p>
+          <div className="text-center">
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              {role === 'seller' ? 'No bids sent, yet!' : 'No bids received'}
+            </p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              {role === 'seller' 
+                ? 'Start browsing items to place your first bid'
+                : 'Your items will appear here once you receive bids'}
+            </p>
+          </div>
         </div>
       ) : (
         <BidList bids={bids} />

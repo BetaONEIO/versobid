@@ -11,8 +11,8 @@ export const validateName = (name: string): string | null => {
   return null;
 };
 
-export const validateUsername = (username: string): string | null => {
-  if (!username.trim()) {
+export const validateUsername = (username: string | undefined): string | null => {
+  if (!username?.trim()) {
     return 'Username is required';
   }
   if (username.length < 3) {
@@ -39,11 +39,14 @@ export const validatePassword = (password: string): string | null => {
   if (!password) {
     return 'Password is required';
   }
-  if (password.length < 6 || password.length > 20) {
-    return 'Password must be between 6 and 20 characters';
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters long';
   }
   if (!/[A-Z]/.test(password)) {
     return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter';
   }
   if (!/[0-9]/.test(password)) {
     return 'Password must contain at least one number';
@@ -52,4 +55,20 @@ export const validatePassword = (password: string): string | null => {
     return 'Password must contain at least one special character';
   }
   return null;
+};
+
+export const getPasswordStrength = (password: string): {
+  score: number;
+  requirements: { met: boolean; text: string }[];
+} => {
+  const requirements = [
+    { met: password.length >= 8, text: 'At least 8 characters long' },
+    { met: /[A-Z]/.test(password), text: 'One uppercase letter' },
+    { met: /[a-z]/.test(password), text: 'One lowercase letter' },
+    { met: /[0-9]/.test(password), text: 'One number' },
+    { met: /[!@#$%^&*(),.?":{}|<>]/.test(password), text: 'One special character' }
+  ];
+
+  const score = requirements.filter(req => req.met).length;
+  return { score, requirements };
 };

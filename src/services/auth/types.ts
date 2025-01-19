@@ -1,8 +1,8 @@
-import { AuthUser } from './types/user';
+import { User } from '../../types/user';
 
 export interface AuthService {
-  signup: (formData: AuthFormData) => Promise<AuthUser>;
-  login: (identifier: string, password: string) => Promise<AuthUser>;
+  login: (identifier: string, password: string) => Promise<User>;
+  signup: (formData: AuthFormData) => Promise<User>;
   requestPasswordReset: (email: string) => Promise<void>;
 }
 
@@ -16,5 +16,5 @@ export interface AuthFormData {
 export interface AuthResponse {
   success: boolean;
   message: string;
-  user?: AuthUser;
+  user?: User;
 }

@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserRole, AuthState, User } from '../types';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ExtendedSupabaseUser } from '../types/user';
+import { useNotification } from './NotificationContext';
+import { retryOperation } from '../lib/supabase';
+import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 interface UserContextType {
   role: UserRole;
@@ -12,78 +15,79 @@ interface UserContextType {
   logout: () => void;
 }
 
+interface ProfileType {
+  id: string;
+  full_name: string;
+  email: string;
+  username: string;
+  is_admin: boolean;
+}
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
+};
+
 const initialAuthState: AuthState = {
   isAuthenticated: false,
   user: null
 };
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
-
-export function useUser() {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-}
-
-export function UserProvider({ children }: { children: React.ReactNode }) {
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { addNotification } = useNotification();
   const [role, setRole] = useState<UserRole>(() => {
-    try {
-      const savedRole = localStorage.getItem('userRole');
-      return (savedRole as UserRole) || 'buyer';
-    } catch (error) {
-      console.error('Failed to get role from localStorage:', error);
-      return 'buyer';
-    }
+    const savedRole = localStorage.getItem('userRole');
+    return (savedRole as UserRole) || 'buyer';
   });
-
   const [auth, setAuth] = useState<AuthState>(initialAuthState);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const updateAuthState = (user: User | null) => {
-    setAuth({
-      isAuthenticated: !!user,
-      user
-    });
-  };
+  const [mounted, setMounted] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    return () => {
+      setMounted(false);
+    };
+  }, []);
 
+  useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
+        const { data: { session } } = await retryOperation(() => 
+          supabase.auth.getSession()
+        );
         
         if (session?.user && mounted) {
-          const { data: profile, error: profileError } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .single() as PostgrestSingleResponse<ProfileType>;
 
-          if (profileError) throw profileError;
-
-          if (profile && mounted) {
+          if (!error && profile && mounted) {
             const supabaseUser = session.user as ExtendedSupabaseUser;
-            updateAuthState({
-              id: profile.id,
-              name: profile.full_name,
-              email: profile.email,
-              username: profile.username,
-              is_admin: profile.is_admin || false,
-              email_verified: supabaseUser.email_verified || false
+            setAuth({
+              isAuthenticated: true,
+              user: {
+                id: profile.id,
+                name: profile.full_name,
+                email: profile.email,
+                username: profile.username,
+                is_admin: profile.is_admin || false,
+                email_verified: supabaseUser.email_verified || false
+              }
             });
           }
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
-        setError(error instanceof Error ? error.message : 'Failed to initialize auth');
-        updateAuthState(null);
+        addNotification('error', 'Failed to load user profile');
       } finally {
         if (mounted) {
           setLoading(false);
@@ -94,71 +98,63 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
-      try {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { data: profile, error: profileError } = await supabase
+      if (event === 'SIGNED_IN' && session?.user && mounted) {
+        try {
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .single() as PostgrestSingleResponse<ProfileType>;
 
-          if (profileError) throw profileError;
-
-          if (profile) {
+          if (!error && profile && mounted) {
             const supabaseUser = session.user as ExtendedSupabaseUser;
-            updateAuthState({
-              id: profile.id,
-              name: profile.full_name,
-              email: profile.email,
-              username: profile.username,
-              is_admin: profile.is_admin || false,
-              email_verified: supabaseUser.email_verified || false
+            setAuth({
+              isAuthenticated: true,
+              user: {
+                id: profile.id,
+                name: profile.full_name,
+                email: profile.email,
+                username: profile.username,
+                is_admin: profile.is_admin || false,
+                email_verified: supabaseUser.email_verified || false
+              }
             });
           }
-        } else if (event === 'SIGNED_OUT') {
-          updateAuthState(null);
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+          setAuth(initialAuthState);
         }
-      } catch (error) {
-        console.error('Error handling auth state change:', error);
-        setError(error instanceof Error ? error.message : 'Failed to handle auth state change');
-        updateAuthState(null);
+      } else if (event === 'SIGNED_OUT' && mounted) {
+        setAuth(initialAuthState);
       }
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, addNotification, mounted, location.pathname]);
 
   const toggleRole = () => {
-    try {
-      const newRole = role === 'buyer' ? 'seller' : 'buyer';
-      setRole(newRole);
-      localStorage.setItem('userRole', newRole);
-    } catch (error) {
-      console.error('Failed to toggle role:', error);
-      setError('Failed to toggle role');
-    }
+    const newRole = role === 'buyer' ? 'seller' : 'buyer';
+    setRole(newRole);
+    localStorage.setItem('userRole', newRole);
   };
 
   const login = (user: User) => {
-    setError(null);
-    updateAuthState(user);
+    setAuth({
+      isAuthenticated: true,
+      user,
+    });
   };
 
   const logout = async () => {
     try {
       await supabase.auth.signOut();
-      updateAuthState(null);
-      setError(null);
+      setAuth(initialAuthState);
       navigate('/signin');
     } catch (error) {
       console.error('Error logging out:', error);
-      setError('Failed to log out');
-      throw error;
+      addNotification('error', 'Failed to log out');
     }
   };
 
@@ -173,33 +169,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-        <div className="text-center text-red-600 dark:text-red-400">
-          <p>{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const value = {
-    role,
-    toggleRole,
-    auth,
-    login,
-    logout
-  };
-
   return (
-    <UserContext.Provider value={value}>
+    <UserContext.Provider value={{ role, toggleRole, auth, login, logout }}>
       {children}
     </UserContext.Provider>
   );
-}
+};

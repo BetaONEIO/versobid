@@ -1,4 +1,3 @@
-// Expanded mock product database
 export const mockProducts = [
   // Electronics - Phones
   {

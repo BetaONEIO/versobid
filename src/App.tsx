@@ -21,18 +21,14 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { NotificationList } from './components/ui/NotificationList';
 import { VerificationBanner } from './components/ui/VerificationBanner';
 
-// Get PayPal client ID from environment variables
-const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-
-if (!paypalClientId) {
-  console.warn('PayPal Client ID not found in environment variables');
-}
-
 // PayPal configuration
 const paypalOptions = {
-  clientId: paypalClientId || 'test',
+  clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test',
   currency: 'GBP',
-  intent: 'capture'
+  intent: 'capture',
+  'enable-funding': 'paypal',
+  'disable-funding': 'card,paylater',
+  components: 'buttons'
 };
 
 const App: React.FC = () => {

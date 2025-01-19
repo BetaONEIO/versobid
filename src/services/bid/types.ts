@@ -1,19 +1,14 @@
 import { Bid, BidStatus } from '../../types/bid';
 
-export interface CreateBidParams {
-  itemId: string;
-  bidderId: string;
-  amount: number;
-  message?: string;
-  shippingOption: string;
+export interface BidService {
+  createBid: (itemId: string, amount: number, message?: string) => Promise<Bid>;
+  updateBidStatus: (bidId: string, status: BidStatus, counterOffer?: number) => Promise<void>;
+  getBidsForItem: (userId: string) => Promise<Bid[]>;
+  getReceivedBids: (userId: string) => Promise<Bid[]>;
+  respondToCounter: (bidId: string, accept: boolean) => Promise<void>;
 }
 
-export interface UpdateBidStatusParams {
-  bidId: string;
-  status: BidStatus;
-}
-
-export interface BidServiceResponse {
+export interface BidResponse {
   success: boolean;
   message: string;
   bid?: Bid;

@@ -1,3 +1,4 @@
+// Add missing types for database schema
 export interface Database {
   public: {
     Tables: {
@@ -10,6 +11,14 @@ export interface Database {
           avatar_url: string | null;
           email: string;
           is_admin: boolean;
+          shipping_address?: {
+            street: string;
+            city: string;
+            postcode: string;
+            country: string;
+          };
+          payment_setup?: boolean;
+          onboarding_completed?: boolean;
         };
         Insert: {
           id: string;
@@ -19,6 +28,14 @@ export interface Database {
           avatar_url?: string | null;
           email: string;
           is_admin?: boolean;
+          shipping_address?: {
+            street: string;
+            city: string;
+            postcode: string;
+            country: string;
+          };
+          payment_setup?: boolean;
+          onboarding_completed?: boolean;
         };
         Update: {
           id?: string;
@@ -28,6 +45,14 @@ export interface Database {
           avatar_url?: string | null;
           email?: string;
           is_admin?: boolean;
+          shipping_address?: {
+            street: string;
+            city: string;
+            postcode: string;
+            country: string;
+          };
+          payment_setup?: boolean;
+          onboarding_completed?: boolean;
         };
       };
       items: {
@@ -40,8 +65,9 @@ export interface Database {
           seller_id: string;
           category: string;
           shipping_options: any[];
-          status: string;
+          status: 'active' | 'completed' | 'archived';
           created_at: string;
+          image_url?: string;
         };
         Insert: {
           id?: string;
@@ -52,8 +78,9 @@ export interface Database {
           seller_id: string;
           category: string;
           shipping_options?: any[];
-          status?: string;
+          status?: 'active' | 'completed' | 'archived';
           created_at?: string;
+          image_url?: string;
         };
         Update: {
           id?: string;
@@ -64,8 +91,9 @@ export interface Database {
           seller_id?: string;
           category?: string;
           shipping_options?: any[];
-          status?: string;
+          status?: 'active' | 'completed' | 'archived';
           created_at?: string;
+          image_url?: string;
         };
       };
       bids: {
@@ -75,8 +103,9 @@ export interface Database {
           bidder_id: string;
           amount: number;
           message: string | null;
-          status: string;
+          status: 'pending' | 'accepted' | 'rejected' | 'countered';
           created_at: string;
+          counter_amount?: number;
         };
         Insert: {
           id?: string;
@@ -84,8 +113,9 @@ export interface Database {
           bidder_id: string;
           amount: number;
           message?: string | null;
-          status?: string;
+          status?: 'pending' | 'accepted' | 'rejected' | 'countered';
           created_at?: string;
+          counter_amount?: number;
         };
         Update: {
           id?: string;
@@ -93,8 +123,9 @@ export interface Database {
           bidder_id?: string;
           amount?: number;
           message?: string | null;
-          status?: string;
+          status?: 'pending' | 'accepted' | 'rejected' | 'countered';
           created_at?: string;
+          counter_amount?: number;
         };
       };
       notifications: {
@@ -176,7 +207,7 @@ export interface Database {
           recipient: string;
           subject: string;
           template_name: string;
-          status: string;
+          status: 'pending' | 'sent' | 'failed';
           error: string | null;
           created_at: string;
           updated_at: string | null;
@@ -186,7 +217,7 @@ export interface Database {
           recipient: string;
           subject: string;
           template_name: string;
-          status?: string;
+          status?: 'pending' | 'sent' | 'failed';
           error?: string | null;
           created_at?: string;
           updated_at?: string | null;
@@ -196,7 +227,7 @@ export interface Database {
           recipient?: string;
           subject?: string;
           template_name?: string;
-          status?: string;
+          status?: 'pending' | 'sent' | 'failed';
           error?: string | null;
           created_at?: string;
           updated_at?: string | null;

@@ -64,122 +64,128 @@ export const Listings: React.FC = () => {
         <SearchBar />
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          {searchQuery 
-            ? `Search Results for "${searchQuery}"` 
-            : role === 'buyer' 
-              ? 'My Listings'
-              : 'Current active items'}
-        </h1>
-        {role === 'buyer' && (
-          <Link
-            to="/items/add"
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-          >
-            Add New Item
-          </Link>
-        )}
-      </div>
-
-      {/* Price Analysis */}
-      {searchResults?.priceAnalysis && (
-        <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Market Price Analysis</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col space-y-4">
+          <h1 className="text-2xl font-bold">
+            {searchQuery 
+              ? `Search Results for "${searchQuery}"` 
+              : role === 'buyer' 
+                ? 'My Listings'
+                : 'Current active items'}
+          </h1>
+          
+          {role === 'buyer' && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Suggested Range:</p>
-              <p className="font-medium">
-                {formatCurrency(searchResults.priceAnalysis.suggestedRange.minPrice)} - {formatCurrency(searchResults.priceAnalysis.suggestedRange.maxPrice)}
-              </p>
+              <Link
+                to="/items/add"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+              >
+                Add New Item
+              </Link>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Average Market Price:</p>
-              <p className="font-medium">{formatCurrency(searchResults.priceAnalysis.suggestedRange.marketPrice)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Based on:</p>
-              <p className="font-medium">{searchResults.priceAnalysis.basedOn} similar items</p>
-            </div>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* Search Results or Listings */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {searchResults ? (
-          // Show search results
-          searchResults.results.map((result, index) => (
-            <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-              {result.imageUrl && (
-                <div className="h-48 bg-gray-100 dark:bg-gray-700">
-                  <img 
-                    src={result.imageUrl} 
-                    alt={result.title}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              )}
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-                {result.price && (
-                  <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                    {formatCurrency(result.price)}
-                  </p>
-                )}
-                {result.brand && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Brand: {result.brand}
-                  </p>
-                )}
-                {result.condition && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Condition: {result.condition}
-                  </p>
-                )}
-                {result.shortDescription && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                    {result.shortDescription}
-                  </p>
-                )}
+        {/* Price Analysis */}
+        {searchResults?.priceAnalysis && (
+          <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+            <h2 className="text-lg font-semibold mb-2">Market Price Analysis</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Suggested Range:</p>
+                <p className="font-medium">
+                  {formatCurrency(searchResults.priceAnalysis.suggestedRange.minPrice)} - {formatCurrency(searchResults.priceAnalysis.suggestedRange.maxPrice)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Average Market Price:</p>
+                <p className="font-medium">{formatCurrency(searchResults.priceAnalysis.suggestedRange.marketPrice)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Based on:</p>
+                <p className="font-medium">{searchResults.priceAnalysis.basedOn} similar items</p>
               </div>
             </div>
-          ))
-        ) : (
-          // Show user's listings
-          listings.map((listing) => (
-            <Link 
-              key={listing.id} 
-              to={`/listings/${listing.id}`}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold">{listing.title}</h3>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {listing.category}
-                  </span>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-                  {listing.description}
-                </p>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Budget:</span>
-                    <span className="ml-2 text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                      {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
-                    </span>
+          </div>
+        )}
+
+        {/* Results Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {searchResults ? (
+            // Show search results
+            searchResults.results.map((result, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                {result.imageUrl && (
+                  <div className="h-48 bg-gray-100 dark:bg-gray-700">
+                    <img 
+                      src={result.imageUrl} 
+                      alt={result.title}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-                  {listing.seller_username && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Posted by: {listing.seller_username}
-                    </div>
+                )}
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
+                  {result.price && (
+                    <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {formatCurrency(result.price)}
+                    </p>
+                  )}
+                  {result.brand && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Brand: {result.brand}
+                    </p>
+                  )}
+                  {result.condition && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Condition: {result.condition}
+                    </p>
+                  )}
+                  {result.shortDescription && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
+                      {result.shortDescription}
+                    </p>
                   )}
                 </div>
               </div>
-            </Link>
-          ))
-        )}
+            ))
+          ) : (
+            // Show user's listings
+            listings.map((listing) => (
+              <Link 
+                key={listing.id} 
+                to={`/listings/${listing.id}`}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-semibold">{listing.title}</h3>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {listing.category}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                    {listing.description}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Budget:</span>
+                      <span className="ml-2 text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                        {formatCurrency(listing.minPrice)} - {formatCurrency(listing.maxPrice)}
+                      </span>
+                    </div>
+                    {listing.seller_username && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Posted by: {listing.seller_username}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
